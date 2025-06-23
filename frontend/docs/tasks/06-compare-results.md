@@ -15,13 +15,62 @@ Build the results comparison page showing user predictions vs actual results wit
 
 ## Page Structure
 
-### app/(private)/forms/[id]/compare/page.tsx
+### app/(private)/forms/compare/page.tsx
 
 ```typescript
-// Load comparison data from API
-// Display predictions vs actual results
-// Show detailed scoring breakdown
-// Expandable sections by tournament stage
+import { useUser } from '@clerk/nextjs';
+import useSWR from 'swr';
+import { clientFetcher } from '@/lib/fetcher';
+import CompareAccordion from '@/components/CompareAccordion';
+import ScoringBreakdown from '@/components/ScoringBreakdown';
+import SimulatePanel from '@/components/SimulatePanel';
+
+export default function CompareResultsPage() {
+  const { user, isLoaded } = useUser();
+  const { leagueId } = useLeague();
+  const { data: compareData } = useSWR(
+    user && leagueId ? `/leagues/${leagueId}/forms/me/compare` : null,
+    clientFetcher
+  );
+
+  if (!isLoaded) {
+    return <div>Loading...</div>;
+  }
+
+  if (!leagueId) {
+    return <div>Please select a league first</div>;
+  }
+
+  if (!compareData) {
+    return <div>Loading comparison data...</div>;
+  }
+
+  return (
+    <div className="max-w-6xl mx-auto">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold">Results Comparison</h1>
+        <div className="text-sm text-gray-500">
+          League: <span className="font-medium">{leagueId}</span>
+        </div>
+      </div>
+
+      <div className="grid lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2">
+          <ScoringBreakdown data={compareData} />
+          <CompareAccordion
+            matches={compareData.matches}
+            advance={compareData.advance}
+            topScorer={compareData.topScorer}
+          />
+        </div>
+
+        <div className="lg:col-span-1">
+          <SimulatePanel />
+        </div>
+      </div>
+    </div>
+  );
+}
 ```
 
 ## Core Components
@@ -89,9 +138,9 @@ interface MatchDisplay {
 
 ## API Integration
 
-- `GET /forms/:id/compare` - Get comparison data
-- Real-time updates when new results come in
+- `GET /leagues/${leagueId}/forms/me/compare` - Get comparison data for the league
 - Handle partial results (ongoing tournament)
+- League-specific ranking and points calculation
 
 ## Accordion Implementation
 
@@ -153,7 +202,6 @@ const stages = [
 - [ ] Accordion expand/collapse works
 - [ ] Mobile layout is usable
 - [ ] Error states are handled
-- [ ] Real-time updates work
 
 ## Performance Considerations
 

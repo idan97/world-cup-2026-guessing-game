@@ -1,19 +1,20 @@
-# Mission 07 – Forms & Membership
+# Mission 07 – User Forms
 
 **Goal:**
-Implement endpoints and DB tables for forms and form membership (owner/editor roles).
+Implement endpoints and database logic for creating and managing a user's single, global prediction form.
 
 ## Checklist
 
-- [ ] Add `forms` and `form_members` tables to Prisma schema and migrate
-- [ ] Implement `GET /me/forms` (list user forms)
-- [ ] Implement `POST /forms` (create new form)
-- [ ] Implement membership roles (owner/editor)
-- [ ] Add middleware to check form access
+- [ ] Add `Form` table to the Prisma schema with a unique constraint on `ownerId` to enforce one form per user.
+- [ ] Implement `GET /forms/me` to fetch the authenticated user's form.
+- [ ] Implement `POST /forms` to create a blank form, returning a 409 Conflict error if one already exists for the user.
+- [ ] Add middleware to ensure only the form's owner can access and modify it.
 
 ## Acceptance Criteria
 
-- Users can create and list forms
-- Membership roles are enforced
+- [ ] A user can create exactly one prediction form.
+- [ ] A user can retrieve their own form data.
+- [ ] Users are prevented from creating more than one form.
+- [ ] Users cannot access or modify forms belonging to other users.
 
-**Design doc reference:** Section 3 (Data model), Section 5 (API surface)
+**Design doc reference:** Section 3 (Data model), Section 5 (REST API)

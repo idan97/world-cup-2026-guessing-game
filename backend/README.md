@@ -71,12 +71,14 @@ To set up the database:
 ### Environment Variables
 
 - `DATABASE_URL` - PostgreSQL connection string
+- `CLERK_SECRET_KEY` - Clerk backend authentication key
+- `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` - Clerk frontend publishable key (for frontend reference)
 
 ## Architecture
 
 - **Runtime**: Node.js 20 + Express 5
 - **Language**: TypeScript
 - **Database**: PostgreSQL + Prisma ORM
-- **Auth**: Password-less magic link (JWT)
+- **Auth**: Clerk (supports Google, GitHub, email/password, etc.)
 - **Cache**: Redis (optional)
 - **Tests**: Vitest + Supertest (planned)

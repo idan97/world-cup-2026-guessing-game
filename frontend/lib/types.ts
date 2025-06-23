@@ -2,46 +2,6 @@
 export type Stage = 'GROUP' | 'R32' | 'R16' | 'QF' | 'SF' | 'F';
 export type Outcome = 'W' | 'D' | 'L';
 
-/* ─ Authentication & Session ─ */
-export interface Session {
-  userId: string;
-  nickname: string;
-  approved: boolean;
-  colboNumber: string;
-  tokenExp: number; // unix seconds
-}
-
-export interface LoginRequest {
-  email: string;
-  displayName?: string;
-  colboNumber?: string;
-}
-
-export interface AuthCallbackResponse {
-  jwt: string;
-  approved: boolean;
-  user: {
-    id: string;
-    email: string;
-    displayName: string;
-    colboNumber: string;
-    role: 'USER' | 'ADMIN';
-    isApproved: boolean;
-  };
-}
-
-export interface UserProfile {
-  id: string;
-  email: string;
-  displayName: string;
-  colboNumber: string;
-  role: 'USER' | 'ADMIN';
-  isApproved: boolean;
-  requestedAt: string | null;
-  approvedAt: string | null;
-  createdAt: string;
-}
-
 /* ─ Dashboard payloads ─ */
 export interface LeaderboardEntry {
   rank: number;
@@ -57,11 +17,6 @@ export interface NextMatch {
   teams: [string, string];
   myPick?: { scoreA: number; scoreB: number };
   locked: boolean;
-}
-
-export interface DailyDigest {
-  date: string;
-  html: string;
 }
 
 /* ─ Form editor ─ */
@@ -130,20 +85,26 @@ export interface SimulatedStanding {
 }
 
 export interface SimulateResponse {
+  leagueId: string;
   leaderboard: SimulatedStanding[];
+  myCurrentRank: number;
+  mySimulatedRank: number;
+  rankChange: number;
 }
 
 /* ─ Additional helper types ─ */
 export interface Team {
-  id: string;
+  id: string; // ISO country code (e.g., "FRA", "BRA")
   name: string;
-  flag: string;
+  flag: string; // URL to flag image
+  group?: string; // Group letter for group stage
 }
 
 export interface Player {
   id: string;
   name: string;
   teamId: string;
+  position: string;
 }
 
 /* ─ API Response wrappers ─ */
@@ -153,8 +114,77 @@ export interface ApiResponse<T> {
   message?: string;
 }
 
-export interface ApiError {
+export class ApiError extends Error {
+  constructor(
+    public status: number,
+    message: string
+  ) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
+/* ─ League Types ─ */
+export interface League {
+  id: string;
+  name: string;
+  joinCode: string;
+  isDefault: boolean;
+  memberCount: number;
+  createdAt: string;
+  role: 'MEMBER' | 'ADMIN';
+}
+
+export interface LeagueMembership {
+  leagueId: string;
+  userId: string;
+  role: 'MEMBER' | 'ADMIN';
+  joinedAt: string;
+}
+
+/* API Response Types */
+export interface JoinLeagueResponse {
+  league: League;
   message: string;
-  code?: string;
-  status?: number;
+}
+
+export interface SavePicksRequest {
+  groupPicks: GroupPick[];
+  bracketPicks: BracketPick[];
+  topScorer: string;
+}
+
+export interface SavePicksResponse {
+  message: string;
+  lastSaved: string;
+}
+
+export interface SubmitFormRequest {
+  nickname: string;
+  confirmSubmission: boolean;
+}
+
+export interface SubmitFormResponse {
+  message: string;
+  submittedAt: string;
+  isFinal: true;
+}
+
+export interface LeaderboardResponse {
+  entries: LeaderboardEntry[];
+  total: number;
+  hasMore: boolean;
+  leagueInfo: {
+    id: string;
+    name: string;
+    memberCount: number;
+  };
+}
+
+export interface MyLeaderboardPosition {
+  rank: number;
+  totalPoints: number;
+  pointsBehindLeader: number;
+  pointsBehindNext: number;
+  percentile: number; // 0-100
 } 

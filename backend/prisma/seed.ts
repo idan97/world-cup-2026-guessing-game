@@ -1,9 +1,23 @@
 import { PrismaClient } from '@prisma/client';
+import { randomBytes } from 'crypto';
 
 const prisma = new PrismaClient();
 
 async function main(): Promise<void> {
   console.log('🌱 Starting database seed...');
+
+  // Create the "General" league
+  const generalLeague = await prisma.league.upsert({
+    where: { id: 'general' },
+    update: {},
+    create: {
+      id: 'general',
+      name: 'General',
+      description: 'Public league for all players.',
+      joinCode: randomBytes(4).toString('hex'), // 8-char random code
+    },
+  });
+  console.log('✅ Created/verified General league:', generalLeague.name);
 
   // Create admin user
   const adminUser = await prisma.user.upsert({
@@ -12,48 +26,28 @@ async function main(): Promise<void> {
     create: {
       email: 'admin@example.com',
       displayName: 'Admin User',
-      colboNumber: 'ADMIN001',
-      isApproved: true,
-      role: 'ADMIN',
-      requestedAt: new Date(),
-      approvedAt: new Date(),
     },
   });
-
   console.log('✅ Created admin user:', adminUser.email);
 
-  // Create test user
-  const testUser = await prisma.user.upsert({
-    where: { email: 'test@example.com' },
-    update: {},
+  // Make the admin user an admin of the General league
+  await prisma.leagueMember.upsert({
+    where: {
+      leagueId_userId: {
+        leagueId: generalLeague.id,
+        userId: adminUser.id,
+    },
+    },
+    update: { role: 'ADMIN' },
     create: {
-      email: 'test@example.com',
-      displayName: 'Test User',
-      colboNumber: 'TEST001',
-      isApproved: true,
-      role: 'USER',
-      requestedAt: new Date(),
-      approvedAt: new Date(),
+      leagueId: generalLeague.id,
+      userId: adminUser.id,
+      role: 'ADMIN',
     },
   });
-
-  console.log('✅ Created test user:', testUser.email);
-
-  // Create unapproved user
-  const unapprovedUser = await prisma.user.upsert({
-    where: { email: 'pending@example.com' },
-    update: {},
-    create: {
-      email: 'pending@example.com',
-      displayName: 'Pending User',
-      colboNumber: 'PEND001',
-      isApproved: false,
-      role: 'USER',
-      requestedAt: new Date(),
-    },
-  });
-
-  console.log('✅ Created pending user:', unapprovedUser.email);
+  console.log(
+    `✅ Made ${adminUser.email} an ADMIN of ${generalLeague.name}`
+  );
 
   console.log('🎉 Database seeding completed!');
 }

@@ -15,14 +15,116 @@ Build the prediction form editor with group stage table, knockout bracket, and t
 
 ## Page Structure
 
-### app/(private)/forms/[id]/edit/page.tsx
+### app/(private)/forms/edit/page.tsx
 
 ```typescript
-// Load form draft data
-// Form state management
-// Auto-save on changes (debounced)
-// Submit final form
-// Lock status handling
+import { useUser } from '@clerk/nextjs';
+import { useState, useEffect } from 'react';
+import useSWR from 'swr';
+import { clientFetcher } from '@/lib/fetcher';
+import GroupTable from '@/components/GroupTable';
+import BracketPicker from '@/components/BracketPicker';
+import TopScorerInput from '@/components/TopScorerInput';
+import FormActions from '@/components/FormActions';
+
+export default function FormEditorPage() {
+  const { user, isLoaded } = useUser();
+  const { leagueId } = useLeague();
+  const { data: formData, mutate } = useSWR(
+    user && leagueId ? `/leagues/${leagueId}/forms/me` : null,
+    clientFetcher
+  );
+
+  const [formState, setFormState] = useState({
+    groupPicks: [],
+    bracketPicks: [],
+    topScorer: '',
+    isDirty: false,
+    isSaving: false,
+    isLocked: false,
+  });
+
+  // Auto-save logic with league context
+  const saveFormData = async (data: FormState) => {
+    try {
+      await fetcher(`/leagues/${leagueId}/forms/me/picks`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      });
+      setFormState((prev) => ({ ...prev, isDirty: false, isSaving: false }));
+    } catch (error) {
+      console.error('Failed to save form:', error);
+      setFormState((prev) => ({ ...prev, isSaving: false }));
+    }
+  };
+
+  if (!isLoaded) {
+    return <div>Loading...</div>;
+  }
+
+  if (!leagueId) {
+    return <div>Please select a league first</div>;
+  }
+
+  return (
+    <div className="max-w-6xl mx-auto">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold">Edit Your Predictions</h1>
+        <div className="text-sm text-gray-500">
+          League: <span className="font-medium">{leagueId}</span>
+        </div>
+      </div>
+
+      <div className="space-y-8">
+        <GroupTable
+          picks={formState.groupPicks}
+          onChange={(picks) =>
+            setFormState((prev) => ({
+              ...prev,
+              groupPicks: picks,
+              isDirty: true,
+            }))
+          }
+          disabled={formState.isLocked}
+        />
+
+        <BracketPicker
+          picks={formState.bracketPicks}
+          onChange={(picks) =>
+            setFormState((prev) => ({
+              ...prev,
+              bracketPicks: picks,
+              isDirty: true,
+            }))
+          }
+          disabled={formState.isLocked}
+        />
+
+        <TopScorerInput
+          value={formState.topScorer}
+          onChange={(value) =>
+            setFormState((prev) => ({
+              ...prev,
+              topScorer: value,
+              isDirty: true,
+            }))
+          }
+          disabled={formState.isLocked}
+        />
+
+        <FormActions
+          formState={formState}
+          onSave={() => {
+            /* save logic */
+          }}
+          onSubmit={() => {
+            /* submit logic */
+          }}
+        />
+      </div>
+    </div>
+  );
+}
 ```
 
 ## Core Components
@@ -75,7 +177,7 @@ interface FormState {
 ### Auto-save Implementation
 
 - Debounce changes (1 second)
-- Save to `/forms/:id/picks`
+- Save to `/forms/me/picks`
 - Show saving indicator
 - Handle save errors gracefully
 
@@ -88,11 +190,12 @@ interface FormState {
 
 ## API Integration
 
-- `GET /forms/:id` - Load current form data
-- `PUT /forms/:id/picks` - Save draft
-- `POST /forms/:id/submit` - Final submission
+- `GET /leagues/${leagueId}/forms/me` - Load current user's form data for the league
+- `PUT /leagues/${leagueId}/forms/me/picks` - Save draft for the league
+- `POST /leagues/${leagueId}/forms/me/submit` - Final submission for the league
 - `GET /teams` - Team data for selects
 - `GET /players` - Player data for autocomplete
+- `GET /leagues/${leagueId}/status` - Check if league form submission is locked
 
 ## UI Details
 

@@ -1,238 +1,319 @@
-World-Cup Prediction Server – Design Doc
+# World-Cup Prediction Platform — Design Doc
 
-(Express + TypeScript, ≤ 1 000 forms)
+Node 20 · Express 5 · TypeScript · PostgreSQL 15 · Clerk Auth
 
-⸻
+---
 
-1 · Goals
+## 1 · High-Level Goals
 
-# Requirement
+| #   | Goal                                                                                                                                       |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | Users authenticate via Clerk (supports Google, GitHub, email/password, etc.).                                                              |
+| 2   | Each user automatically joins public "General" league on first login.                                                                      |
+| 3   | Users create or join private leagues via an 8-character join-code.                                                                         |
+| 4   | Every league has its own admins who can add / remove members, rotate the join-code, and post announcements.                                |
+| 5   | One global prediction form per user (group stage, full bracket, top scorer); the same form applies to every league the user belongs to.    |
+| 6   | Forms freeze 30 minutes before the tournament's opening kick-off.                                                                          |
+| 7   | Server auto-scores after each official result and maintains (a) per-league leaderboards (visible to members) and (b) a global leaderboard. |
+| 8   | League admins can post messages / summaries (Markdown, optional "pinned" flag).                                                            |
+| 9   | Audit trail for every points change; system runs comfortably on a hobby-tier Postgres plus one small Node container.                       |
 
-1 Collect one-shot predictions (all group games, full bracket, top scorer).
-2 Freeze all forms 30 min before the opening match.
-3 Auto-score after every official result, keep a live leaderboard.
-4 Let users review their picks vs. reality and run what-if simulations that do not alter the real leaderboard.
-5 Closed community: each signup is approved by an admin; users identified by their colboNumber (internal budget code).
-6 A form may have several editors but one owner.
-7 Audit trail for every points change.
-8 Everything must run comfortably on a hobby-tier Postgres + one small Node instance.
+---
 
-⸻
+## 2 · Tech Stack
 
-2 · Tech stack
+| Layer             | Choice                                           | Why                             |
+| ----------------- | ------------------------------------------------ | ------------------------------- |
+| Runtime           | Node 20 + Express 5                              | Lightweight, familiar           |
+| Language          | TypeScript                                       | Compile-time safety             |
+| Database          | PostgreSQL 15 + Prisma                           | Relational fit, easy migrations |
+| Auth              | Clerk                                            | Multi-provider auth service     |
+| Logging / Metrics | pino + express-prom-bundle                       | Lightweight observability       |
+| CI / CD           | GitHub Actions → Docker → Render / Railway / Fly | One-click deploy                |
 
-Layer Choice Why
-Runtime Node 20 + Express 5 Minimal and familiar
-Language TypeScript Compile-time safety
-DB PostgreSQL + Prisma ORM Relational fit, migrations, type safety
-Auth Password-less magic link (JWT) No password storage
-Mailing Nodemailer → SMTP / Postmark Approval + notifications
-Cache / Jobs Redis (optional) Leaderboard cache, cron locks
-Tests Vitest + Supertest Fast TS-native
-CI/CD GitHub Actions → Docker → Render/Railway/Fly One-click Postgres
-Logs/metrics pino + express-prom-bundle Simple observability
+Unit tests are intentionally omitted.
 
-⸻
+---
 
-3 · Data model (TypeScript types)
+## 3 · Data Model (TypeScript)
 
-/_ ─── enums ─────────────────────────────────────────────────── _/
-export type Stage = 'GROUP'|'R32'|'R16'|'QF'|'SF'|'F';
+### Enums
+
+```typescript
+export type Stage = 'GROUP' | 'R32' | 'R16' | 'QF' | 'SF' | 'F';
 export type Outcome = 'W' | 'D' | 'L';
+```
 
-/_ ─── reference tables ──────────────────────────────────────── _/
+### Reference
+
+```typescript
 export interface Team {
-id: string; // 'FRA'
-name: string; // 'France'
-group: 'A'|'B'|'C'|'D'|'E'|'F'|'G'|'H';
+  id: string; // 'FRA'
+  name: string; // 'France'
+  group: 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H';
 }
+```
 
-/_ ─── auth & membership ─────────────────────────────────────── _/
+### Users
+
+```typescript
 export interface User {
-id: string; // UUID
-email: string;
-displayName: string;
-colboNumber: string; // internal budget code
-isApproved: boolean;
-role: 'USER' | 'ADMIN';
-requestedAt: Date | null;
-approvedAt: Date | null;
+  id: string; // Clerk userId
+  email: string;
+  displayName: string;
+  createdAt: Date;
+}
+```
+
+### Leagues
+
+```typescript
+export interface League {
+  id: string; // 'general' or uuid
+  name: string;
+  description: string | null;
+  joinCode: string; // 8-char, unique
+  createdAt: Date;
 }
 
-export interface FormMember {
-formId: string;
-userId: string;
-role: 'OWNER' | 'EDITOR'; // no VIEWER
+export interface LeagueMember {
+  leagueId: string;
+  userId: string;
+  role: 'ADMIN' | 'PLAYER';
+  joinedAt: Date;
 }
+```
 
-/_ ─── prediction containers ─────────────────────────────────── _/
+### Optional Allow-List
+
+```typescript
+/* optional allow-list (no e-mails sent) */
+export interface LeagueAllowEmail {
+  leagueId: string;
+  email: string;
+  role: 'ADMIN' | 'PLAYER';
+  addedAt: Date;
+}
+```
+
+### League Announcements
+
+```typescript
+export interface LeagueMessage {
+  id: string;
+  leagueId: string;
+  authorId: string; // must be ADMIN
+  title: string;
+  body: string; // markdown
+  pinned: boolean;
+  createdAt: Date;
+}
+```
+
+### Forms
+
+```typescript
+/* one form per user */
 export interface Form {
-id: string;
-nickname: string; // e.g. "Idan #2"
-submittedAt: Date | null;
-isFinal: boolean; // true when locked
-totalPoints: number; // running tally
+  id: string;
+  ownerId: string; // User.id
+  nickname: string;
+  submittedAt: Date | null;
+  isFinal: boolean;
+  totalPoints: number;
 }
+```
 
-/_ ─── static schedule ───────────────────────────────────────── _/
+### Schedule
+
+```typescript
 export interface Match {
-id: number; // 1-64
-stage: Stage;
-slot: string; // 'R16-A', 'QF-2' …
-kickoff: Date;
-teamAId: string | null; // filled when known
-teamBId: string | null;
-scoreA: number | null; // 90-min scores
-scoreB: number | null;
-winnerTeamId: string | null;
+  id: number; // 1 – 64
+  stage: Stage;
+  slot: string; // 'R16-A'
+  kickoff: Date;
+  teamAId: string | null;
+  teamBId: string | null;
+  scoreA: number | null; // 90'
+  scoreB: number | null;
+  winnerTeamId: string | null;
 }
+```
 
-/_ ─── user picks ─────────────────────────────────────────────── _/
+### Picks
+
+```typescript
 export interface MatchPick {
-formId: string;
-matchId: number; // slot, not "real" teams
-predScoreA: number;
-predScoreB: number;
-predOutcome: Outcome; // W / D / L
+  formId: string;
+  matchId: number;
+  predScoreA: number;
+  predScoreB: number;
+  predOutcome: Outcome;
 }
 
 export interface AdvancePick {
-formId: string;
-stage: Exclude<Stage,'GROUP'>; // R32 … F
-teamId: string; // e.g. 'FRA'
+  formId: string;
+  stage: Exclude<Stage, 'GROUP'>;
+  teamId: string;
 }
 
 export interface TopScorerPick {
-formId: string;
-playerName: string;
+  formId: string;
+  playerName: string;
 }
+```
 
-/_ ─── audit trail ────────────────────────────────────────────── _/
+### Audit
+
+```typescript
 export interface ScoringRun {
-id: number;
-formId: string;
-runAt: Date;
-delta: number; // +15 pts, −3 pts, etc.
-details: {
-matchId?: number; // if from one match
-stage?: Stage; // if stage bonus
-note?: string; // manual override
-};
+  id: number;
+  formId: string;
+  runAt: Date;
+  delta: number; // points change
+  details: { matchId?: number; stage?: Stage; note?: string };
 }
+```
 
-Index highlights
+### Key Indexes & Constraints
 
--- speed up scoring & stage checks
-CREATE INDEX ON match_picks(matchId);
-CREATE INDEX ON advance_picks(stage, teamId);
--- fast leaderboard
-CREATE INDEX ON forms(totalPoints DESC);
+```sql
+-- one global form per user
+CREATE UNIQUE INDEX one_form_per_user ON forms(owner_id);
 
-Rows at full capacity (1 000 forms):
-• match_picks ≈ 64 000
-• advance_picks ≈ 15 000
-• Others ≪ 10 000
-Well within hobby-tier limits.
+-- fast join-code lookup
+CREATE UNIQUE INDEX league_code ON league(join_code);
 
-⸻
+-- unique email per user
+CREATE UNIQUE INDEX user_email ON users(email);
 
-4 · Scoring rules (World Cup)
+-- member lookup
+CREATE INDEX member_lg ON league_member(league_id);
 
-Stage Outcome Exact score Advance bonus
-Group match 1 pt +3 pts 2 pts (team reaches R32)
-Round of 32 3 pts +3 pts 4 pts
-Round of 16 5 pts +3 pts 6 pts
-Quarter-final 7 pts +3 pts 8 pts
-Semi-final 9 pts +3 pts 10 pts
-Final 11 pts +3 pts —
-Top-scorer pick — — 8 pts
+-- allow-list lookup
+CREATE INDEX allowed_email ON league_allow_email(league_id, email);
 
-Outcome / exact-score judged on 90 minutes only.
-Slot alignment required—same fixture position as the real bracket.
+-- leaderboard sort
+CREATE INDEX forms_lb ON forms(total_points DESC);
 
-⸻
+-- scoring helpers
+CREATE INDEX match_pick_match ON match_picks(match_id);
+CREATE INDEX advance_pick_stage ON advance_picks(stage, team_id);
+```
 
-5 · API surface (v1, JSON)
+---
 
-Method Path Body (⇢ key fields) Response (⇢ key fields) Notes
-POST /auth/login { email } OR { email, displayName, colboNumber } 204 OR 400 with NEW_USER_REGISTRATION_REQUIRED Returning users: email only. New users: all fields required
-GET /auth/callback — { jwt, approved, user } JWT holds userId, isApproved. Returns user profile
-GET /me — user profile authenticated user info
-GET /me/forms — array list user forms
-POST /forms { nickname } { formId } create empty sheet
-PUT /forms/:id/picks { matchPicks, advancePicks, topScorer } 204 allowed until isFinal=true
-POST /forms/:id/submit — 204 mark ready (still editable pre-lock)
-GET /forms/:id/compare — CompareResponse full per-match breakdown
-POST /simulate { overrides } { leaderboard[] } returns simulated ranking of all forms
-GET /leaderboard — top-N official standings
-Admin /admin/users/pending (GET), /admin/users/:id/approve (POST) — — approve sign-ups
-Admin /admin/matches (GET/POST) schedule / results — import or update
-Admin /admin/rescore (POST) — 202 force full recompute
+## 4 · Scoring Matrix (90-minute basis)
 
-All user-facing routes are guarded by requireApproved middleware.
+| Stage         | Outcome pts | Exact score pts | Advance bonus |
+| ------------- | ----------- | --------------- | ------------- |
+| Group         | +1          | +3              | +2            |
+| Round of 32   | +3          | +3              | +4            |
+| Round of 16   | +5          | +3              | +6            |
+| Quarter-final | +7          | +3              | +8            |
+| Semi-final    | +9          | +3              | +10           |
+| Final         | +11         | +3              | —             |
+| Top scorer    | —           | —               | +8            |
 
-Login Flow Details:
-• Returning users: POST /auth/login with { email } only
-• New users: First attempt with email only returns 400 + code "NEW_USER_REGISTRATION_REQUIRED"  
-• New users: Second attempt with { email, displayName, colboNumber } creates account + sends approval notifications
+Outcome & exact are judged strictly after 90 minutes.
+Slot alignment is required.
 
-⸻
+---
 
-6 · Workflows & background jobs
+## 5 · REST API (prefix /api/v1)
 
-When Job Action
-T-30 min before first kickoff lockForms UPDATE forms SET isFinal=true
-Final whistle of each match processMatch(id) add outcome/exact pts; log ScoringRun; bump totals
-Stage completed processStage(stage) add advance points
-After final processTopScorer() add golden-boot bonus
-Nightly 03:00 UTC rescoreAll() recompute every form for safety
-Signup event notifyAdmins() e-mail "Approve idan@example.com"
+### Auth
 
-⸻
+Authentication is handled by Clerk middleware. All protected routes require a valid Clerk session.
+No custom auth endpoints needed - Clerk handles sign-in/sign-up flows.
 
-7 · Admin-approval e-mail flow 1. User verifies their e-mail (magic link). 2. isApproved=false → middleware blocks main app. 3. System e-mails all admins with an Approve link:
+### Leagues
 
-GET /admin/users/<id>/approve?token=…
+| Method | Path                          | Auth  | Purpose                                 |
+| ------ | ----------------------------- | ----- | --------------------------------------- |
+| GET    | /leagues                      | JWT   | list my leagues                         |
+| POST   | /leagues                      | JWT   | create league (creator becomes ADMIN)   |
+| POST   | /leagues/:code/join           | JWT   | join via join-code                      |
+| POST   | /leagues/:id/join-code/rotate | ADMIN | regenerate code                         |
+| GET    | /leagues/:id/members          | ADMIN | list members                            |
+| POST   | /leagues/:id/allow            | ADMIN | add e-mail allow-list `{ email, role }` |
+| DELETE | /leagues/:id/members/:uid     | ADMIN | remove member                           |
 
-    4.	On click → sets isApproved=true, sends confirmation to user.
+### League Messages
 
-(Nodemailer with an SMTP credential or Postmark template.)
+| Method | Path                       | Auth  | Purpose                          |
+| ------ | -------------------------- | ----- | -------------------------------- |
+| GET    | /leagues/:id/messages      | JWT   | list messages                    |
+| POST   | /leagues/:id/messages      | ADMIN | create `{ title, body, pinned }` |
+| PUT    | /leagues/:id/messages/:mid | ADMIN | edit / repin                     |
+| DELETE | /leagues/:id/messages/:mid | ADMIN | delete                           |
 
-⸻
+### Forms & Gameplay
 
-8 · Deployment outline
+| Method | Path               | Auth  | Purpose                             |
+| ------ | ------------------ | ----- | ----------------------------------- |
+| GET    | /forms/me          | JWT   | fetch my form                       |
+| POST   | /forms             | JWT   | create blank form (409 if exists)   |
+| PUT    | /forms/:id/picks   | owner | save picks (if unlocked)            |
+| POST   | /forms/:id/submit  | owner | mark final                          |
+| GET    | /forms/:id/compare | owner | picks vs results breakdown          |
+| POST   | /simulate          | JWT   | what-if leaderboard `{ overrides }` |
 
-graph LR
-GitHub -->|push main| GH[GitHub Actions]
-GH -->|docker build / test| Reg[(Container Registry)]
-Reg --> Render
-subgraph Render
-direction TB
-API[(Express container)]
-PG[(Postgres 1 GB)]
-REDIS[(Redis optional)]
-end
+### Leaderboards & Fixtures
 
-    •	Release CMD: prisma migrate deploy && node dist/index.js
-    •	Secrets: DATABASE_URL, JWT_SECRET, SMTP_*.
-    •	One read replica or Redis cache can front /leaderboard.
+| Method | Path                     | Purpose                         |
+| ------ | ------------------------ | ------------------------------- |
+| GET    | /leaderboard/global      | → global board                  |
+| GET    | /leagues/:id/leaderboard | → league board (members only)   |
+| GET    | /matches/next?formId=... | → upcoming fixtures for my form |
 
-⸻
+---
 
-9 · Commit message pattern
+## 6 · Jobs & Automation
 
-feat(api) | add compare & simulate endpoints
-feat(db) | add FormMember, colboNumber
-fix(score)| stage-alignment bug
+| Trigger                     | Job                                                                                                                                                                                | Result |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| First login (via Clerk)     | Upsert User row. Add LeagueMember row for general league. Check LeagueAllowEmail rows matching user.email; insert memberships with stored role and delete matched allow-list rows. |        |
+| Join-code join              | Insert LeagueMember.                                                                                                                                                               |        |
+| 30 min before opening match | lockForms() → isFinal = true.                                                                                                                                                      |        |
+| After each match            | processMatch(matchId) → outcome & exact points.                                                                                                                                    |        |
+| Stage complete              | processStage(stage) → advance bonus points.                                                                                                                                        |        |
+| Nightly 03:00 UTC           | rescoreAll() → rebuild totals for all forms.                                                                                                                                       |        |
 
-(Follows user's feat(list) | menu layout style.)
+---
 
-⸻
+## 7 · Deployment
 
-Ready-made share blurb
+### Container Start Command
 
-"We're building a private World-Cup pool in Node/Express.
-DB schema, API routes, scoring math, approval flow and deployment plan are in Design Doc v1 (link).
-Please review the TypeScript interfaces and REST contract; scoring logic lives in @wc-predictor/scoring and is reused by both server and React client."
+```bash
+prisma migrate deploy && node dist/index.js
+```
 
-⸻
+### Secrets
+
+| Name                              | Purpose             |
+| --------------------------------- | ------------------- |
+| DATABASE_URL                      | Postgres connection |
+| CLERK_SECRET_KEY                  | Clerk backend auth  |
+| NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY | Clerk frontend auth |
+
+Runs fine on a hobby-tier Postgres (≥1 GB).
+
+---
+
+## 8 · Commit Convention
+
+`feat(leagues)  | join-code flow`
+`feat(messages) | league announcements`
+`feat(auth)     | google oauth`
+`fix(scoring)   | outcome rule edge-case`
+
+(Matches "feat(list) | menu layout" style.)
+
+---
+
+## 9 · Hand-Off Blurb
+
+World-Cup Prediction Platform – Google sign-in, one global prediction form, private leagues via join-code, per-league admins & announcements, automatic scoring, and what-if simulation.
+Build everything to the schema, routes, and job schedule defined in this Design Doc.

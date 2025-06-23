@@ -30,6 +30,10 @@ Deploy the frontend application to Vercel with proper environment configuration 
 # API Configuration
 NEXT_PUBLIC_API=https://api.worldcup2024.example.com
 
+# Clerk Authentication
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_live_...
+CLERK_SECRET_KEY=sk_live_...
+
 # Analytics (Optional)
 NEXT_PUBLIC_GA_ID=G-XXXXXXXXXX
 NEXT_PUBLIC_HOTJAR_ID=1234567
@@ -39,7 +43,6 @@ NEXT_PUBLIC_SENTRY_DSN=https://xxxxx@sentry.io/xxxxx
 
 # Feature Flags (Optional)
 NEXT_PUBLIC_ENABLE_SIMULATION=true
-NEXT_PUBLIC_ENABLE_DAILY_DIGEST=true
 ```
 
 #### Preview Environment Variables
@@ -47,6 +50,10 @@ NEXT_PUBLIC_ENABLE_DAILY_DIGEST=true
 ```bash
 # Staging API
 NEXT_PUBLIC_API=https://api-staging.worldcup2024.example.com
+
+# Clerk Authentication (Test Keys)
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
+CLERK_SECRET_KEY=sk_test_...
 
 # Development flags
 NEXT_PUBLIC_DEBUG_MODE=true
@@ -195,7 +202,7 @@ export const trackEvent = (
 };
 
 // Usage in components
-trackEvent('login', 'authentication', 'magic_link');
+trackEvent('login', 'authentication', 'google_oauth');
 trackEvent('form_submit', 'predictions', 'final_submission');
 ```
 
@@ -323,13 +330,15 @@ export function middleware(request: NextRequest) {
 ```typescript
 const cspHeader = `
   default-src 'self';
-  script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.googletagmanager.com;
-  style-src 'self' 'unsafe-inline';
-  img-src 'self' blob: data: https:;
-  font-src 'self';
+  script-src 'self' 'unsafe-eval' 'unsafe-inline' *.clerk.accounts.dev *.clerk.com *.google.com *.googletagmanager.com;
+  style-src 'self' 'unsafe-inline' fonts.googleapis.com;
+  img-src 'self' blob: data: *.clerk.com *.googleusercontent.com;
+  font-src 'self' fonts.gstatic.com;
+  connect-src 'self' *.clerk.accounts.dev *.clerk.com;
+  frame-src *.clerk.accounts.dev *.clerk.com;
   object-src 'none';
   base-uri 'self';
-  form-action 'self';
+  form-action 'self' *.clerk.accounts.dev *.clerk.com;
   frame-ancestors 'none';
   upgrade-insecure-requests;
 `;

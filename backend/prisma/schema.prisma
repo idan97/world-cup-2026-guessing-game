@@ -26,14 +26,9 @@ enum Outcome {
   L
 }
 
-enum UserRole {
-  USER
+enum LeagueRole {
   ADMIN
-}
-
-enum FormMemberRole {
-  OWNER
-  EDITOR
+  PLAYER
 }
 
 enum TeamGroup {
@@ -67,36 +62,80 @@ model User {
   id          String   @id @default(cuid())
   email       String   @unique
   displayName String
-  colboNumber String   // internal budget code
-  isApproved  Boolean  @default(false)
-  role        UserRole @default(USER)
-  requestedAt DateTime?
-  approvedAt  DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   // Relations
-  formMembers FormMember[]
+  leagues  LeagueMember[]
+  messages LeagueMessage[]
+  form     Form?
 
   @@map("users")
 }
 
-model FormMember {
-  formId String
-  userId String
-  role   FormMemberRole
+model League {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  joinCode    String   @unique
+  createdAt   DateTime @default(now())
 
   // Relations
-  form Form @relation(fields: [formId], references: [id], onDelete: Cascade)
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  members   LeagueMember[]
+  allowList LeagueAllowEmail[]
+  messages  LeagueMessage[]
 
-  @@id([formId, userId])
-  @@map("form_members")
+  @@map("leagues")
+}
+
+model LeagueMember {
+  leagueId String
+  userId   String
+  role     LeagueRole
+  joinedAt DateTime   @default(now())
+
+  // Relations
+  league League @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([leagueId, userId])
+  @@map("league_members")
+}
+
+model LeagueAllowEmail {
+  id       Int        @id @default(autoincrement())
+  leagueId String
+  email    String
+  role     LeagueRole
+  addedAt  DateTime   @default(now())
+
+  // Relations
+  league League @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+
+  @@unique([leagueId, email])
+  @@map("league_allow_emails")
+}
+
+model LeagueMessage {
+  id        String   @id @default(cuid())
+  leagueId  String
+  authorId  String
+  title     String
+  body      String   // markdown
+  pinned    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  // Relations
+  league League @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  author User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@map("league_messages")
 }
 
 // Prediction containers
 model Form {
   id          String    @id @default(cuid())
+  ownerId     String    @unique
   nickname    String    // e.g. "Idan #2"
   submittedAt DateTime?
   isFinal     Boolean   @default(false) // true when locked
@@ -105,7 +144,7 @@ model Form {
   updatedAt   DateTime  @updatedAt
 
   // Relations
-  members         FormMember[]
+  owner           User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   matchPicks      MatchPick[]
   advancePicks    AdvancePick[]
   topScorerPicks  TopScorerPick[]
@@ -129,9 +168,9 @@ model Match {
   updatedAt    DateTime  @updatedAt
 
   // Relations
-  teamA       Team? @relation("TeamA", fields: [teamAId], references: [id])
-  teamB       Team? @relation("TeamB", fields: [teamBId], references: [id])
-  winnerTeam  Team? @relation("Winner", fields: [winnerTeamId], references: [id])
+  teamA       Team?       @relation("TeamA", fields: [teamAId], references: [id])
+  teamB       Team?       @relation("TeamB", fields: [teamBId], references: [id])
+  winnerTeam  Team?       @relation("Winner", fields: [winnerTeamId], references: [id])
   matchPicks  MatchPick[]
 
   @@map("matches")

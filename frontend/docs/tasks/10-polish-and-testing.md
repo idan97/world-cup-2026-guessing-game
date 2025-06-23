@@ -108,7 +108,7 @@ const SimulatePanel = lazy(() => import('./SimulatePanel'));
 const LeaderboardTable = lazy(() => import('./LeaderboardTable'));
 
 // Route-based splitting
-const FormEditor = lazy(() => import('../forms/[id]/edit/page'));
+const FormEditor = lazy(() => import('../forms/edit/page'));
 ```
 
 ### Image Optimization
@@ -214,7 +214,6 @@ export const LeaderboardSkeleton = () => (
 - [ ] CSS Grid/Flexbox layouts work
 - [ ] JavaScript APIs are supported
 - [ ] Cookie handling works
-- [ ] SSE connections establish
 - [ ] Media queries respond correctly
 
 ## UI Polish
@@ -265,11 +264,14 @@ export const LeaderboardSkeleton = () => (
 
 ### Manual Testing Checklist
 
-- [ ] Complete user journey (login → edit → compare → leaderboard)
+- [ ] Complete user journey (Clerk sign-in → edit → compare → leaderboard)
+- [ ] Clerk authentication modal functionality
 - [ ] Form validation edge cases
 - [ ] Network failure scenarios
 - [ ] Large dataset handling
-- [ ] Session expiration handling
+- [ ] Clerk session management and token refresh
+- [ ] League switching functionality
+- [ ] Join code modal testing
 - [ ] Mobile device testing
 - [ ] Accessibility testing with screen reader
 

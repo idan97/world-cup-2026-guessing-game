@@ -1,67 +1,93 @@
-/* ─── enums ─────────────────────────────────────────────────── */
+/* enums */
 export type Stage = 'GROUP' | 'R32' | 'R16' | 'QF' | 'SF' | 'F';
 export type Outcome = 'W' | 'D' | 'L';
 
-/* ─── reference tables ──────────────────────────────────────── */
+/* reference */
 export interface Team {
   id: string; // 'FRA'
   name: string; // 'France'
   group: 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H';
 }
 
-/* ─── auth & membership ─────────────────────────────────────── */
+/* users */
 export interface User {
   id: string; // UUID
   email: string;
   displayName: string;
-  colboNumber: string; // internal budget code
-  isApproved: boolean;
-  role: 'USER' | 'ADMIN';
-  requestedAt: Date | null;
-  approvedAt: Date | null;
+  createdAt: Date;
 }
 
-export interface FormMember {
-  formId: string;
+/* leagues */
+export interface League {
+  id: string; // 'general' or uuid
+  name: string;
+  description: string | null;
+  joinCode: string; // 8-char, unique
+  createdAt: Date;
+}
+
+export interface LeagueMember {
+  leagueId: string;
   userId: string;
-  role: 'OWNER' | 'EDITOR'; // no VIEWER
+  role: 'ADMIN' | 'PLAYER';
+  joinedAt: Date;
 }
 
-/* ─── prediction containers ─────────────────────────────────── */
+/* optional allow-list (no e-mails sent) */
+export interface LeagueAllowEmail {
+  leagueId: string;
+  email: string;
+  role: 'ADMIN' | 'PLAYER';
+  addedAt: Date;
+}
+
+/* league announcements */
+export interface LeagueMessage {
+  id: string;
+  leagueId: string;
+  authorId: string; // must be ADMIN
+  title: string;
+  body: string; // markdown
+  pinned: boolean;
+  createdAt: Date;
+}
+
+/* one form per user */
 export interface Form {
   id: string;
-  nickname: string; // e.g. "Idan #2"
+  ownerId: string; // User.id
+  nickname: string;
   submittedAt: Date | null;
-  isFinal: boolean; // true when locked
-  totalPoints: number; // running tally
+  isFinal: boolean;
+  totalPoints: number;
 }
 
-/* ─── static schedule ───────────────────────────────────────── */
+/* schedule */
 export interface Match {
-  id: number; // 1-64
+  id: number; // 1 – 64
   stage: Stage;
-  slot: string; // 'R16-A', 'QF-2' …
+  slot: string; // 'R16-A'
   kickoff: Date;
-  teamAId: string | null; // filled when known
+  teamAId: string | null;
   teamBId: string | null;
-  scoreA: number | null; // 90-min scores
+  scoreA: number | null; // 90'
   scoreB: number | null;
   winnerTeamId: string | null;
 }
 
-/* ─── user picks ─────────────────────────────────────────────── */
+/* picks */
 export interface MatchPick {
   formId: string;
-  matchId: number; // slot, not "real" teams
+  matchId: number;
   predScoreA: number;
   predScoreB: number;
-  predOutcome: Outcome; // W / D / L
+  predOutcome: Outcome;
 }
 
 export interface AdvancePick {
   formId: string;
-  stage: Exclude<Stage, 'GROUP'>; // R32 … F
-  teamId: string; // e.g. 'FRA'
+  stage: Exclude<Stage, 'GROUP'>;
+  teamId: string;
 }
 
 export interface TopScorerPick {
@@ -69,15 +95,11 @@ export interface TopScorerPick {
   playerName: string;
 }
 
-/* ─── audit trail ────────────────────────────────────────────── */
+/* audit */
 export interface ScoringRun {
   id: number;
   formId: string;
   runAt: Date;
-  delta: number; // +15 pts, −3 pts, etc.
-  details: {
-    matchId?: number; // if from one match
-    stage?: Stage; // if stage bonus
-    note?: string; // manual override
-  };
+  delta: number; // points change
+  details: { matchId?: number; stage?: Stage; note?: string };
 }

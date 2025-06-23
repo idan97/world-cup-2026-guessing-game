@@ -33,33 +33,33 @@ graph TD
 
 | Task | Name                                             | Priority | Est. Time | Dependencies |
 | ---- | ------------------------------------------------ | -------- | --------- | ------------ |
-| 01   | [Project Setup](./01-project-setup.md)           | Critical | 2-4h      | None         |
+| 01   | [Project Setup](./01-project-setup.md)           | Critical | 3-5h      | None         |
 | 02   | [Types & Utilities](./02-types-and-utilities.md) | High     | 4-6h      | Task 01      |
-| 03   | [Auth Flow](./03-auth-flow.md)                   | Critical | 6-8h      | Task 02      |
+| 03   | [Auth Flow](./03-auth-flow.md)                   | Critical | 4-6h      | Task 02      |
 | 04   | [Home Dashboard](./04-home-dashboard.md)         | High     | 8-10h     | Task 03      |
 | 05   | [Form Editor](./05-form-editor.md)               | High     | 12-15h    | Task 02      |
 | 06   | [Compare Results](./06-compare-results.md)       | High     | 8-10h     | Task 02      |
 | 07   | [Simulate Panel](./07-simulate-panel.md)         | Medium   | 6-8h      | Task 06      |
 | 08   | [Leaderboard Page](./08-leaderboard-page.md)     | Medium   | 6-8h      | Task 04      |
-| 09   | [Daily Digest](./09-daily-digest.md)             | Low      | 6-8h      | Task 02, 04  |
+| 09   | [Daily Digest](./09-daily-digest.md)             | Low      | 4-6h      | Task 02, 04  |
 | 10   | [Polish & Testing](./10-polish-and-testing.md)   | Critical | 10-12h    | All previous |
 | 11   | [Deployment](./11-deployment.md)                 | Critical | 4-6h      | Task 10      |
 
-**Total Estimated Time:** 72-95 hours
+**Total Estimated Time:** 69-91 hours (reduced due to Clerk's built-in features)
 
 ## Development Phases
 
-### Phase 1: Foundation (20-26 hours)
+### Phase 1: Foundation (17-23 hours)
 
-- Tasks 01-03: Project setup, types, and authentication
-- **Deliverable:** Working login flow and basic app structure
+- Tasks 01-03: Project setup, types, and Clerk authentication
+- **Deliverable:** Working Clerk login flow and basic app structure
 
 ### Phase 2: Core Features (34-43 hours)
 
 - Tasks 04-06: Dashboard, form editor, and results comparison
 - **Deliverable:** Complete prediction workflow
 
-### Phase 3: Enhanced Features (18-24 hours)
+### Phase 3: Enhanced Features (16-22 hours)
 
 - Tasks 07-09: Simulation, leaderboard, and daily digest
 - **Deliverable:** Full feature set with engagement tools
@@ -74,7 +74,7 @@ graph TD
 - **Framework:** Next.js 14 with App Router
 - **Styling:** Tailwind CSS 3
 - **Data Fetching:** Native fetch + SWR
-- **Authentication:** HttpOnly cookies
+- **Authentication:** Clerk (JWT tokens)
 - **Real-time:** Server-Sent Events (SSE)
 - **Icons:** Heroicons
 - **Deployment:** Vercel

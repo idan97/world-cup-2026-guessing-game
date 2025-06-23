@@ -1,75 +1,56 @@
-# Mission 05 – Auth Flow (Magic Link)
+# Mission 05 – Auth Flow (Clerk)
 
 **Goal:**
-Implement the authentication flow: magic link login, JWT issuance, and smart user registration handling.
+Implement Clerk authentication with automatic user provisioning and league membership sync on every request.
 
 ## Checklist
 
-- [x] Add `users` table to Prisma schema and migrate
-- [x] Implement `POST /auth/login` (smart login: email only for returning users, full registration for new users)
-- [x] Implement `GET /auth/callback` (verify link, issue JWT)
-- [x] Implement `GET /me` (authenticated user profile)
-- [x] Use JWT for session management with proper middleware
-- [x] Handle new user registration with admin approval notifications
+- [ ] Add `@clerk/clerk-sdk-node` to dependencies.
+- [ ] Configure Clerk middleware with `CLERK_SECRET_KEY`.
+- [ ] Create DB sync middleware that runs after Clerk auth:
+  - Upsert user record using Clerk's `userId` and session claims.
+  - Ensure user is added to "General" league as `PLAYER`.
+  - Process `LeagueAllowEmail` entries for user's email.
+- [ ] Remove custom Google OAuth endpoints and JWT logic.
+- [ ] Update authentication middleware to use Clerk's session data.
 
-## Login Flow Implementation
+## Clerk Auth Flow
 
-### Returning Users (Existing Email)
+Clerk handles authentication via its built-in components and middleware. No custom endpoints needed.
 
-```http
-POST /auth/login
-Content-Type: application/json
+**Backend Integration:**
 
-{
-  "email": "user@example.com"
-}
+```typescript
+// app.ts
+import { clerkMiddleware, requireAuth } from '@clerk/clerk-sdk-node';
+import { syncUser } from './middlewares/clerk';
+
+app.use(clerkMiddleware({ secretKey: config.clerkSecretKey }));
+app.use(requireAuth()); // Verifies __session on every request
+app.use(syncUser); // Syncs user data with database
 ```
 
-**Response:** `204 No Content` → Magic link sent
+**User Session Data:**
 
-### New Users (First Time)
-
-```http
-POST /auth/login
-Content-Type: application/json
-
+```typescript
+// Available in req.auth after Clerk middleware
 {
-  "email": "newuser@example.com"
+  userId: string;
+  sessionClaims: {
+    email_address: string;
+    name?: string;
+    first_name?: string;
+    last_name?: string;
+  };
 }
 ```
-
-**Response:** `400 Bad Request`
-
-```json
-{
-  "error": "Bad Request",
-  "message": "displayName and colboNumber are required for new users",
-  "code": "NEW_USER_REGISTRATION_REQUIRED"
-}
-```
-
-### New User Registration
-
-```http
-POST /auth/login
-Content-Type: application/json
-
-{
-  "email": "newuser@example.com",
-  "displayName": "John Doe",
-  "colboNumber": "EMP001"
-}
-```
-
-**Response:** `204 No Content` → Account created, approval notifications sent, magic link sent
 
 ## Acceptance Criteria
 
-- [x] Returning users can login with email only
-- [x] New users get clear error message with code for missing registration info
-- [x] New users can complete registration with all required fields
-- [x] JWT is issued with proper user data and approval status
-- [x] Admin approval notifications are sent for new signups
-- [x] Authentication middleware protects routes correctly
+- [ ] Users can authenticate using Clerk (supports multiple providers: Google, GitHub, email/password).
+- [ ] User records are automatically synced in the database on every authenticated request.
+- [ ] All authenticated users are automatically added to the "General" league as a `PLAYER`.
+- [ ] Pre-approved league memberships (via `LeagueAllowEmail`) are processed automatically.
+- [ ] No custom JWT handling required - Clerk manages sessions via secure HTTP-only cookies.
 
-**Design doc reference:** Section 5 (API surface), Section 2 (Tech stack), Section 7 (Admin-approval flow)
+**Design doc reference:** Section 5 (REST API), Section 1 (High-Level Goals)

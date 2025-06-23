@@ -15,7 +15,7 @@ Build the simulation panel allowing users to modify future match outcomes and se
 
 ## Integration Point
 
-- Appears on `/forms/[id]/compare#simulate` page
+- Appears on `/forms/compare#simulate` page
 - Anchor link from home page CTA buttons
 - Panel below the main comparison view
 
@@ -88,10 +88,11 @@ interface SimulationState {
 
 ### API Integration
 
-- `POST /simulate` with overrides payload
+- `POST /leagues/${leagueId}/simulate` with overrides payload
 - Debounce calls (300ms after last change)
 - Handle loading states
 - Error recovery
+- League-specific simulation results
 
 ### Request Format
 
@@ -123,12 +124,14 @@ interface SimulateRequest {
 
 ```typescript
 interface SimulationResults {
+  leagueId: string;
   myNewRank: number;
   myCurrentRank: number;
   rankChange: number; // positive = better
   newPoints: number;
   pointsGained: number;
   leaderboard: SimulatedStanding[];
+  totalParticipants: number;
 }
 ```
 

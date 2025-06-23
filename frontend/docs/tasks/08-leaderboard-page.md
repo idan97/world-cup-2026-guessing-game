@@ -7,22 +7,65 @@ Build the complete leaderboard page with full rankings, search functionality, an
 ## Requirements
 
 - [ ] Full leaderboard table with all participants
+- [ ] Tabs or a selector to switch between Global and League leaderboards
 - [ ] Search box to filter by nickname
 - [ ] Infinite scroll or pagination
 - [ ] Highlight current user's position
 - [ ] Responsive design for mobile
-- [ ] Real-time updates (optional)
 
 ## Page Structure
 
 ### app/(private)/leaderboard/page.tsx
 
 ```typescript
-// Full leaderboard data fetching
-// Search state management
-// Pagination/infinite scroll logic
-// Real-time updates via SWR
-// Mobile-responsive table
+import { useUser } from '@clerk/nextjs';
+import { useState } from 'react';
+import useSWR from 'swr';
+import { clientFetcher } from '@/lib/fetcher';
+import { useLeague } from '@/lib/useLeague';
+import LeaderboardTable from '@/components/LeaderboardTable';
+import LeaderboardSearch from '@/components/LeaderboardSearch';
+
+export default function LeaderboardPage() {
+  const { user, isLoaded } = useUser();
+  const { leagueId } = useLeague();
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const { data: leaderboardData } = useSWR(
+    user ? `/leaderboard/${leagueId}` : null,
+    clientFetcher
+  );
+
+  if (!isLoaded) {
+    return <div>Loading...</div>;
+  }
+
+  return (
+    <div className="max-w-6xl mx-auto">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold">Leaderboard</h1>
+        <div className="text-sm text-gray-500">
+          League: <span className="font-medium">{leagueId}</span>
+        </div>
+      </div>
+
+      <div className="space-y-6">
+        <LeaderboardSearch
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          resultsCount={leaderboardData?.filtered?.length || 0}
+          totalCount={leaderboardData?.total || 0}
+        />
+
+        <LeaderboardTable
+          data={leaderboardData?.entries || []}
+          currentUserId={user?.id}
+          searchTerm={searchTerm}
+        />
+      </div>
+    </div>
+  );
+}
 ```
 
 ## Core Components
@@ -91,7 +134,7 @@ useEffect(() => {
 ```typescript
 // Load more data as user scrolls
 const { data, size, setSize, isLoading } = useSWRInfinite(
-  (index) => `/leaderboard?page=${index + 1}&limit=50`,
+  (index) => `/leaderboard/${leagueId}?page=${index + 1}&limit=50`,
   fetcher
 );
 
@@ -156,8 +199,9 @@ useEffect(() => {
 
 ## API Integration
 
-- `GET /leaderboard?limit=500` - Full leaderboard
-- `GET /leaderboard?search=${term}` - Filtered results
+- `GET /leagues/${leagueId}/leaderboard` - League-specific leaderboard
+- `GET /leagues/${leagueId}/leaderboard?search=${searchTerm}` - Filtered results
+- `GET /leagues/${leagueId}/leaderboard?page=${page}&limit=${limit}` - Paginated results
 - SWR for caching and revalidation
 - Handle large datasets efficiently
 
@@ -197,13 +241,6 @@ useEffect(() => {
 - Sticky column headers
 - Touch-friendly search input
 - Optimized row heights
-
-## Real-time Updates (Optional)
-
-- WebSocket connection for live updates
-- Background refresh with SWR
-- Visual indicators for rank changes
-- Smooth animations for updates
 
 ## Testing Scenarios
 
