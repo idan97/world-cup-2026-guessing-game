@@ -2,7 +2,8 @@ import { Request, Response, NextFunction } from 'express';
 import { clerkMiddleware } from '@clerk/express';
 import logger from '../logger';
 import { config } from '../config';
-import { UserService } from '../services/UserService';
+import { UserModel } from '../models/User';
+import { LeagueModel } from '../models/League';
 
 // Initialize Clerk middleware
 export const clerk = clerkMiddleware({
@@ -22,14 +23,11 @@ export const syncUser = async (
     const email = sessionClaims.email_address;
     const name = sessionClaims.name || 'Unknown User';
 
-    const { isNewUser } = await UserService.syncUserFromClerk(
-      userId,
-      email,
-      name
-    );
+    // Sync user from Clerk
+    const { isNewUser } = await syncUserFromClerk(userId, email, name);
 
     if (isNewUser) {
-      await UserService.provisionNewUser(userId, email);
+      await provisionNewUser(userId, email);
     }
 
     next();
@@ -41,3 +39,55 @@ export const syncUser = async (
     next(error);
   }
 };
+
+// Business logic functions (moved from UserModel)
+async function syncUserFromClerk(
+  userId: string,
+  email: string,
+  displayName: string
+): Promise<{ isNewUser: boolean }> {
+  try {
+    const existingUser = await UserModel.findByIdWithGeneralLeague(userId);
+
+    // Only sync if user doesn't exist or data changed
+    if (!existingUser) {
+      await UserModel.create(userId, email, displayName);
+      logger.info({ userId, email, isNewUser: true }, 'New user created');
+    } else if (
+      existingUser.email !== email ||
+      existingUser.displayName !== displayName
+    ) {
+      await UserModel.update(userId, email, displayName);
+      logger.info({ userId, email, isNewUser: false }, 'User updated');
+    }
+
+    return { isNewUser: !existingUser };
+  } catch (error) {
+    logger.error({ error, userId }, 'Error syncing user from Clerk');
+    throw error;
+  }
+}
+
+async function provisionNewUser(userId: string, email: string): Promise<void> {
+  try {
+    const generalLeague = await LeagueModel.ensureGeneralLeagueExists();
+    await LeagueModel.addMember(generalLeague.id, userId, 'PLAYER');
+
+    const allowList = await LeagueModel.getAllowListByEmail(email);
+
+    for (const row of allowList) {
+      await LeagueModel.addMember(row.leagueId, userId, row.role);
+      await LeagueModel.removeFromAllowList(row.leagueId, email);
+
+      logger.info(
+        { userId, leagueId: row.leagueId, role: row.role },
+        'User added to pre-approved league'
+      );
+    }
+
+    logger.info({ userId, email }, 'New user fully provisioned');
+  } catch (error) {
+    logger.error({ error, userId }, 'Error provisioning new user');
+    throw error;
+  }
+}

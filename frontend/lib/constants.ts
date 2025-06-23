@@ -141,11 +141,6 @@ export const ROUTES = {
  * API endpoints
  */
 export const API_ENDPOINTS = {
-  AUTH: {
-    LOGIN: '/auth/login',           // POST: { email } OR { email, displayName, colboNumber }
-    CALLBACK: '/auth/callback',     // GET: ?token=... returns { jwt, approved, user }
-    ME: '/me',                      // GET: returns user profile
-  },
   LEADERBOARD: '/leaderboard',
   MATCHES: '/matches',
   FORMS: '/forms',
