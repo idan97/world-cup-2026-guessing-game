@@ -9,7 +9,7 @@ export default function Home() {
           <div className="flex justify-between items-center py-6">
             <div className="flex items-center">
               <h1 className="text-2xl font-bold text-gray-900">
-                🏆 World Cup 2024 Guessing Game
+                🏆 World Cup 2026 Guessing Game
               </h1>
             </div>
             <div className="flex items-center space-x-4">
@@ -33,7 +33,7 @@ export default function Home() {
         <SignedOut>
           <div className="text-center">
             <h2 className="text-5xl font-bold text-gray-900 mb-6">
-              Predict the World Cup 2024!
+              Predict the World Cup 2026!
             </h2>
             <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
               Join the ultimate football prediction game. Guess match results, 

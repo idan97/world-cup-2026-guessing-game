@@ -40,6 +40,10 @@ enum TeamGroup {
   F
   G
   H
+  I
+  J
+  K
+  L
 }
 
 // Reference tables
@@ -155,7 +159,7 @@ model Form {
 
 // Static schedule
 model Match {
-  id           Int       @id // 1-64
+  id           Int       @id // 1-104 (expanded from 64 for 2026)
   stage        Stage
   slot         String    // 'R16-A', 'QF-2' …
   kickoff      DateTime

@@ -8,7 +8,7 @@ This document outlines all API endpoints that the frontend will consume, with au
 
 ```typescript
 // API Base URL
-const API_BASE = process.env.NEXT_PUBLIC_API; // http://localhost:3001 (dev) or https://api.worldcup2024.example.com (prod)
+const API_BASE = process.env.NEXT_PUBLIC_API; // http://localhost:3001 (dev) or https://api.worldcup2026.example.com (prod)
 ```
 
 ## Authentication
@@ -96,7 +96,7 @@ type Response = League[];
     "joinCode": "ABC123",
     "isDefault": true,
     "memberCount": 1247,
-    "createdAt": "2024-01-01T00:00:00Z",
+    "createdAt": "2026-01-01T00:00:00Z",
     "role": "MEMBER"
   },
   {
@@ -105,7 +105,7 @@ type Response = League[];
     "joinCode": "DEF456",
     "isDefault": false,
     "memberCount": 12,
-    "createdAt": "2024-01-15T10:30:00Z",
+    "createdAt": "2026-01-15T10:30:00Z",
     "role": "ADMIN"
   }
 ]
@@ -138,7 +138,7 @@ interface JoinLeagueResponse {
     "joinCode": "XYZ789",
     "isDefault": false,
     "memberCount": 25,
-    "createdAt": "2024-02-01T09:00:00Z",
+    "createdAt": "2026-02-01T09:00:00Z",
     "role": "MEMBER"
   },
   "message": "Successfully joined Office Pool"
@@ -193,7 +193,7 @@ interface LeaderboardResponse {
       "userId": "user_2abc123def",
       "nickname": "PredictionMaster",
       "totalPoints": 127,
-      "lastUpdated": "2024-06-15T14:30:00Z"
+      "lastUpdated": "2026-06-15T14:30:00Z"
     },
     {
       "rank": 2,
@@ -201,7 +201,7 @@ interface LeaderboardResponse {
       "userId": "user_2def456ghi",
       "nickname": "FootballFan92",
       "totalPoints": 124,
-      "lastUpdated": "2024-06-15T14:25:00Z"
+      "lastUpdated": "2026-06-15T14:25:00Z"
     }
   ],
   "total": 1247,

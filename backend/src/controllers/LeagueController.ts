@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { BaseController } from './BaseController';
 import { z } from 'zod';
 import { LeagueModel } from '../models/League';
+import { LeagueRole } from '@prisma/client';
 import logger from '../logger';
 
 // Validation schemas
@@ -18,7 +19,7 @@ const createMessageSchema = z.object({
 
 const addAllowEmailSchema = z.object({
   email: z.string().email(),
-  role: z.enum(['ADMIN', 'PLAYER']),
+  role: z.nativeEnum(LeagueRole),
 });
 
 export class LeagueController extends BaseController {
@@ -33,7 +34,7 @@ export class LeagueController extends BaseController {
 
       // Transform data to include role and member count
       const leagues = membershipData.map((membership) => ({
-        id: membership.league.id,
+        id: membership.leagueId,
         name: membership.league.name,
         description: membership.league.description,
         joinCode: membership.league.joinCode,
@@ -70,7 +71,7 @@ export class LeagueController extends BaseController {
       );
 
       // Add creator as admin
-      await LeagueModel.addMember(league.id, userId, 'ADMIN');
+      await LeagueModel.addMember(league.id, userId, LeagueRole.ADMIN);
 
       logger.info(
         { leagueId: league.id, userId, name: league.name },
@@ -111,7 +112,7 @@ export class LeagueController extends BaseController {
       }
 
       // Add user as member
-      await LeagueModel.addMember(league.id, userId, 'PLAYER');
+      await LeagueModel.addMember(league.id, userId, LeagueRole.PLAYER);
 
       logger.info(
         { leagueId: league.id, userId, joinCode: code },

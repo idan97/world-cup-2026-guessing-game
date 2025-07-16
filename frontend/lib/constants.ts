@@ -18,7 +18,7 @@ export const STAGE_NAMES: Record<Stage, string> = {
 };
 
 /**
- * World Cup 2024 teams
+ * World Cup 2026 teams
  */
 export const TEAMS: Team[] = [
   { id: 'ARG', name: 'Argentina', flag: '🇦🇷' },
@@ -95,7 +95,7 @@ export const SCORING = {
 /**
  * Group stage groups
  */
-export const GROUPS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'] as const;
+export const GROUPS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'] as const;
 
 /**
  * Knockout bracket slots

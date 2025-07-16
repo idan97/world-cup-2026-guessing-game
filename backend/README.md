@@ -1,6 +1,6 @@
-# World Cup 2024 Backend
+# World Cup 2026 Backend
 
-Backend server for the World Cup 2024 Guessing Game built with Node.js, TypeScript, Express, and Prisma.
+Backend server for the World Cup 2026 Guessing Game built with Node.js, TypeScript, Express, and Prisma.
 
 ## Setup
 

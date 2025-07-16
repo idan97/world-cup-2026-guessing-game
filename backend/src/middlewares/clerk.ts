@@ -4,6 +4,7 @@ import logger from '../logger';
 import { config } from '../config';
 import { UserModel } from '../models/User';
 import { LeagueModel } from '../models/League';
+import { LeagueRole } from '@prisma/client';
 
 // Initialize Clerk middleware
 export const clerk = clerkMiddleware({
@@ -71,7 +72,7 @@ async function syncUserFromClerk(
 async function provisionNewUser(userId: string, email: string): Promise<void> {
   try {
     const generalLeague = await LeagueModel.ensureGeneralLeagueExists();
-    await LeagueModel.addMember(generalLeague.id, userId, 'PLAYER');
+    await LeagueModel.addMember(generalLeague.id, userId, LeagueRole.PLAYER);
 
     const allowList = await LeagueModel.getAllowListByEmail(email);
 

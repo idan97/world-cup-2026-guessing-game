@@ -1,12 +1,14 @@
 /* enums */
-export type Stage = 'GROUP' | 'R32' | 'R16' | 'QF' | 'SF' | 'F';
-export type Outcome = 'W' | 'D' | 'L';
+import type { Stage, Outcome, LeagueRole, TeamGroup } from '@prisma/client';
+
+// Re-export enums for convenience
+export { Stage, Outcome, LeagueRole, TeamGroup };
 
 /* reference */
 export interface Team {
   id: string; // 'FRA'
   name: string; // 'France'
-  group: 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H';
+  group: TeamGroup; // 12 groups for 2026
 }
 
 /* users */
@@ -29,7 +31,7 @@ export interface League {
 export interface LeagueMember {
   leagueId: string;
   userId: string;
-  role: 'ADMIN' | 'PLAYER';
+  role: LeagueRole;
   joinedAt: Date;
 }
 
@@ -37,7 +39,7 @@ export interface LeagueMember {
 export interface LeagueAllowEmail {
   leagueId: string;
   email: string;
-  role: 'ADMIN' | 'PLAYER';
+  role: LeagueRole;
   addedAt: Date;
 }
 
@@ -64,7 +66,7 @@ export interface Form {
 
 /* schedule */
 export interface Match {
-  id: number; // 1 – 64
+  id: number; // 1 – 104 (expanded from 64 for 2026)
   stage: Stage;
   slot: string; // 'R16-A'
   kickoff: Date;

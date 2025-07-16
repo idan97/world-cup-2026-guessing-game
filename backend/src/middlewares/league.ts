@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { LeagueModel } from '../models/League';
+import { LeagueRole } from '@prisma/client';
 
 // Validate that league ID exists in params
 export const validateLeagueId = (
@@ -45,7 +46,7 @@ export const requireLeagueMembership = async (
 
     // Attach membership info to request
     req.league!.membership = membership;
-    req.league!.isAdmin = membership.role === 'ADMIN';
+    req.league!.isAdmin = membership.role === LeagueRole.ADMIN;
 
     next();
   } catch {
@@ -69,7 +70,7 @@ export const requireLeagueAdmin = async (
 
     const membership = await LeagueModel.getUserMembership(leagueId, userId);
 
-    if (!membership || membership.role !== 'ADMIN') {
+    if (!membership || membership.role !== LeagueRole.ADMIN) {
       res.status(403).json({
         success: false,
         message: 'Only league admins can perform this action',

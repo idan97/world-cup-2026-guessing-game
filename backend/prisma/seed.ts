@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { LeagueRole, PrismaClient } from '@prisma/client';
 import { randomBytes } from 'crypto';
 
 const prisma = new PrismaClient();
@@ -38,11 +38,11 @@ async function main(): Promise<void> {
         userId: adminUser.id,
     },
     },
-    update: { role: 'ADMIN' },
+    update: { role: LeagueRole.ADMIN },
     create: {
       leagueId: generalLeague.id,
       userId: adminUser.id,
-      role: 'ADMIN',
+      role: LeagueRole.ADMIN,
     },
   });
   console.log(

@@ -28,7 +28,7 @@ Deploy the frontend application to Vercel with proper environment configuration 
 
 ```bash
 # API Configuration
-NEXT_PUBLIC_API=https://api.worldcup2024.example.com
+NEXT_PUBLIC_API=https://api.worldcup2026.example.com
 
 # Clerk Authentication
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_live_...
@@ -49,7 +49,7 @@ NEXT_PUBLIC_ENABLE_SIMULATION=true
 
 ```bash
 # Staging API
-NEXT_PUBLIC_API=https://api-staging.worldcup2024.example.com
+NEXT_PUBLIC_API=https://api-staging.worldcup2026.example.com
 
 # Clerk Authentication (Test Keys)
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
@@ -74,7 +74,7 @@ const nextConfig = {
 
   // Image optimization
   images: {
-    domains: ['api.worldcup2024.example.com'],
+    domains: ['api.worldcup2026.example.com'],
     formats: ['image/webp', 'image/avif'],
   },
 

@@ -50,7 +50,7 @@ export type Outcome = 'W' | 'D' | 'L';
 export interface Team {
   id: string; // 'FRA'
   name: string; // 'France'
-  group: 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H';
+  group: 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H' | 'I' | 'J' | 'K' | 'L'; // 12 groups for 2026
 }
 ```
 
@@ -128,7 +128,7 @@ export interface Form {
 
 ```typescript
 export interface Match {
-  id: number; // 1 – 64
+  id: number; // 1 – 104 (expanded from 64 for 2026)
   stage: Stage;
   slot: string; // 'R16-A'
   kickoff: Date;

@@ -1,5 +1,5 @@
 import type { Auth } from '@clerk/express';
-import type { LeagueMember } from '../types';
+import type { LeagueMember, Form } from '../types';
 
 declare global {
   namespace Express {
@@ -9,6 +9,11 @@ declare global {
         id: string;
         membership?: LeagueMember;
         isAdmin: boolean;
+      };
+      form?: {
+        id: string;
+        data?: Form;
+        isOwner: boolean;
       };
     }
   }

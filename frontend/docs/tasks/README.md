@@ -1,6 +1,6 @@
 # Frontend Tasks Breakdown
 
-This directory contains a comprehensive breakdown of all frontend development tasks for the World Cup 2024 Guessing Game project.
+This directory contains a comprehensive breakdown of all frontend development tasks for the World Cup 2026 Guessing Game project.
 
 ## Overview
 

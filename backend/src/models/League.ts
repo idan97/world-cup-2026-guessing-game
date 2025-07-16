@@ -5,6 +5,7 @@ import type {
   LeagueAllowEmail,
   LeagueMember,
   LeagueMessage,
+  LeagueRole,
 } from '../types';
 
 export class LeagueModel {
@@ -100,7 +101,7 @@ export class LeagueModel {
   static async addMember(
     leagueId: string,
     userId: string,
-    role: 'ADMIN' | 'PLAYER'
+    role: LeagueRole
   ): Promise<void> {
     await prisma.leagueMember.create({
       data: {
@@ -196,7 +197,7 @@ export class LeagueModel {
   static async addToAllowList(
     leagueId: string,
     email: string,
-    role: 'ADMIN' | 'PLAYER'
+    role: LeagueRole
   ): Promise<void> {
     await prisma.leagueAllowEmail.upsert({
       where: {
