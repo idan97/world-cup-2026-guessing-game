@@ -26,7 +26,7 @@ export default function HomePage() {
   );
 
   const { data: userForm } = useSWR<FormDraft>(
-    user ? apiUrls.myForm(leagueId) : null,
+    user ? apiUrls.myForm() : null,
     fetcher
   );
 

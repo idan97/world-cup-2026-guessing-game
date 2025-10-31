@@ -119,13 +119,29 @@ export class FormController extends BaseController {
       }
 
       // Create form
-      const form = await FormModel.create(
-        userId,
-        result.data.nickname,
-        result.data.matchPicks,
-        result.data.advancePicks,
+      const form = await FormModel.create(userId, result.data.nickname);
+
+      // Save picks if provided
+      if (
+        result.data.matchPicks ||
+        result.data.advancePicks ||
         result.data.topScorerPicks
-      );
+      ) {
+        await FormModel.savePicks(form.id, {
+          matchPicks: result.data.matchPicks?.map((pick) => ({
+            ...pick,
+            formId: form.id,
+          })),
+          advancePicks: result.data.advancePicks?.map((pick) => ({
+            ...pick,
+            formId: form.id,
+          })),
+          topScorerPicks: result.data.topScorerPicks?.map((pick) => ({
+            ...pick,
+            formId: form.id,
+          })),
+        });
+      }
 
       logger.info(
         { formId: form.id, userId, nickname: form.nickname },

@@ -1,3 +1,6 @@
+'use client';
+
+import Link from 'next/link';
 import { useLeague } from '../../lib/useLeague';
 
 interface CTAButtonsProps {
@@ -10,19 +13,19 @@ export default function CTAButtons({ formId }: CTAButtonsProps) {
   return (
     <div className="bg-white rounded-lg shadow p-6">
       <div className="grid md:grid-cols-2 gap-4">
-        <a
-          href={`/forms/edit?league=${leagueId}`}
-          className="bg-blue-600 hover:bg-blue-700 text-white text-center py-3 px-6 rounded-lg font-semibold transition-colors"
+        <Link
+          href="/forms/edit"
+          className="bg-blue-600 hover:bg-blue-700 text-white text-center py-3 px-6 rounded-lg font-semibold transition-colors block"
         >
           {formId ? 'Edit My Predictions' : 'Create Predictions'}
-        </a>
+        </Link>
 
-        <a
+        <Link
           href={`/forms/compare?league=${leagueId}#simulate`}
-          className="bg-green-600 hover:bg-green-700 text-white text-center py-3 px-6 rounded-lg font-semibold transition-colors"
+          className="bg-green-600 hover:bg-green-700 text-white text-center py-3 px-6 rounded-lg font-semibold transition-colors block"
         >
           Simulate What-If
-        </a>
+        </Link>
       </div>
 
       <div className="mt-3 text-center text-sm text-gray-500">
