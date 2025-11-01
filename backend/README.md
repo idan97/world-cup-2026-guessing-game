@@ -74,6 +74,11 @@ To set up the database:
 - `CLERK_SECRET_KEY` - Clerk backend authentication key
 - `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` - Clerk frontend publishable key (for frontend reference)
 
+## Documentation
+
+- **[Complete Backend Design](./docs/BACKEND_DESIGN.md)** - Comprehensive design document with data model, API specs, scoring system, and more
+- **[Quick Reference](./docs/QUICK_REFERENCE.md)** - Common commands, patterns, and code snippets for daily development
+
 ## Architecture
 
 - **Runtime**: Node.js 20 + Express 5

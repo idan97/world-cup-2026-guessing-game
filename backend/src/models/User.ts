@@ -24,10 +24,14 @@ export class UserModel {
     email: string,
     displayName: string
   ): Promise<void> {
-    await prisma.$executeRaw`
-      INSERT INTO users (id, email, "displayName", "createdAt", "updatedAt")
-      VALUES (${userId}, ${email}, ${displayName}, NOW(), NOW())
-    `;
+    await prisma.user.create({
+      data: {
+        id: userId,
+        email,
+        displayName,
+        isAdmin: false,
+      },
+    });
   }
 
   static async update(
