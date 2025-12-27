@@ -6,6 +6,7 @@ import { requestLogging } from './middlewares/logging';
 import { notFound } from './middlewares/notFound';
 import { errorHandler } from './middlewares/errorHandler';
 import routes from './routes';
+import healthRoutes from './routes/health';
 
 const app = express();
 
@@ -23,6 +24,9 @@ app.use(
 app.use(express.json());
 
 app.use(requestLogging);
+
+// Health check endpoint - no auth required
+app.use('/api', healthRoutes);
 
 app.use(clerk);
 app.use(syncUser);
