@@ -2,35 +2,36 @@
 
 import { useState } from 'react';
 import useSWR from 'swr';
-import { fetcher, api, apiUrls } from '../../lib/api';
+import { apiUrls } from '../../lib/api';
 import { useLeague } from '../../lib/useLeague';
+import { useApi } from '../../lib/useApi';
 import type { FormDraft } from '../../lib/types';
 
 export default function FormExample() {
   const { leagueId } = useLeague();
+  const api = useApi();
   const [isSaving, setIsSaving] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState('');
 
-  // Use SWR to fetch the user's form data
+  // Use SWR to fetch the user's form data (fetcher provided by SWRConfig)
   const { data: formData, mutate } = useSWR<FormDraft>(
-    apiUrls.myForm(leagueId),
-    fetcher
+    apiUrls.myForm()
   );
 
   // Save form draft using direct API call
   const handleSave = async () => {
+    if (!formData?.id) return;
+    
     setIsSaving(true);
     setMessage('');
 
     try {
-      const formDataToSave = {
-        groupPicks: formData?.groupPicks || [],
-        bracketPicks: formData?.bracketPicks || [],
-        topScorer: formData?.topScorer || '',
-      };
-
-      await api.saveForm(leagueId, formDataToSave);
+      await api.savePicks(formData.id, {
+        matchPicks: [],
+        advancePicks: [],
+        topScorerPicks: formData?.topScorer ? [{ playerName: formData.topScorer }] : [],
+      });
       
       // Refresh the form data after saving
       await mutate();
@@ -45,6 +46,8 @@ export default function FormExample() {
 
   // Submit final form using direct API call
   const handleSubmit = async () => {
+    if (!formData?.id) return;
+    
     if (!confirm('Are you sure you want to submit your final predictions? This cannot be undone.')) {
       return;
     }
@@ -53,14 +56,7 @@ export default function FormExample() {
     setMessage('');
 
     try {
-      const formDataToSubmit = {
-        groupPicks: formData?.groupPicks || [],
-        bracketPicks: formData?.bracketPicks || [],
-        topScorer: formData?.topScorer || '',
-        nickname: formData?.nickname || '',
-      };
-
-      await api.submitForm(leagueId, formDataToSubmit);
+      await api.submitForm(formData.id);
       
       // Refresh the form data after submitting
       await mutate();

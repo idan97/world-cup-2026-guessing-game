@@ -66,21 +66,31 @@ export interface Form {
 
 /* schedule */
 export interface Match {
-  id: number; // 1 – 104 (expanded from 64 for 2026)
+  id: string; // cuid
+  matchNumber: number;
   stage: Stage;
-  slot: string; // 'R16-A'
-  kickoff: Date;
-  teamAId: string | null;
-  teamBId: string | null;
-  scoreA: number | null; // 90'
-  scoreB: number | null;
-  winnerTeamId: string | null;
+  team1Code: string;
+  team2Code: string;
+  team1Name: string | null;
+  team2Name: string | null;
+  team1Id: string | null;
+  team2Id: string | null;
+  team1Score: number | null;
+  team2Score: number | null;
+  winnerId: string | null;
+  isFinished: boolean;
+  scheduledAt: Date;
+  playedAt: Date | null;
+  venue: string | null;
+  venueCode: number | null;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 /* picks */
 export interface MatchPick {
   formId: string;
-  matchId: number;
+  matchId: string;
   predScoreA: number;
   predScoreB: number;
   predOutcome: Outcome;
@@ -103,5 +113,5 @@ export interface ScoringRun {
   formId: string;
   runAt: Date;
   delta: number; // points change
-  details: { matchId?: number; stage?: Stage; note?: string };
+  details: { matchId?: string; stage?: Stage; note?: string };
 }

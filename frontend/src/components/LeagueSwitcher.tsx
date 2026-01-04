@@ -3,18 +3,19 @@
 import { useState } from 'react';
 import useSWR from 'swr';
 import { useLeague } from '../../lib/useLeague';
-import { fetcher, joinLeague } from '../../lib/api';
+import { useApi } from '../../lib/useApi';
 import type { League } from '../../lib/types';
 
 export default function LeagueSwitcher() {
   const { leagueId, setLeagueId } = useLeague();
+  const api = useApi();
   const [isOpen, setIsOpen] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [joinCode, setJoinCode] = useState('');
   const [isJoining, setIsJoining] = useState(false);
   const [joinError, setJoinError] = useState('');
 
-  const { data: leagues = [], mutate } = useSWR<League[]>('/leagues', fetcher);
+  const { data: leagues = [], mutate } = useSWR<League[]>('/leagues');
 
   const currentLeague = leagues.find(league => league.id === leagueId);
 
@@ -27,7 +28,7 @@ export default function LeagueSwitcher() {
     setJoinError('');
 
     try {
-      await joinLeague(joinCode.trim().toUpperCase());
+      await api.joinLeague(joinCode.trim().toUpperCase());
       
       // Refresh the leagues list after joining
       await mutate();

@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { LeagueController } from '../controllers/LeagueController';
+import { requireAuth } from '../middlewares/auth';
 import {
   validateLeagueId,
   requireLeagueMembership,
@@ -9,10 +10,10 @@ import {
 const router = Router();
 const leagueController = new LeagueController();
 
-// Public league routes
-router.get('/', leagueController.getMyLeagues);
-router.post('/', leagueController.createLeague);
-router.post('/:code/join', leagueController.joinLeague);
+// User league routes (require authentication)
+router.get('/', requireAuth, leagueController.getMyLeagues);
+router.post('/', requireAuth, leagueController.createLeague);
+router.post('/:code/join', requireAuth, leagueController.joinLeague);
 
 // League member routes (require league membership)
 router.get(

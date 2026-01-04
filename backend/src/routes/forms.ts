@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { FormController } from '../controllers/FormController';
+import { requireAuth } from '../middlewares/auth';
 import {
   validateFormId,
   requireFormOwnership,
@@ -9,9 +10,9 @@ import {
 const router = Router();
 const formController = new FormController();
 
-// Public form routes (user must be authenticated via clerk middleware in main app)
-router.get('/me', formController.getMyForm);
-router.post('/', formController.createForm);
+// User form routes (require authentication)
+router.get('/me', requireAuth, formController.getMyForm);
+router.post('/', requireAuth, formController.createForm);
 
 // Protected form routes (require form ownership)
 // GET /forms/:id - Get form by ID (with ownership check)

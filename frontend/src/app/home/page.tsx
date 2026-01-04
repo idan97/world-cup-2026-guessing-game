@@ -2,7 +2,7 @@
 
 import { useUser } from '@clerk/nextjs';
 import useSWR from 'swr';
-import { fetcher, apiUrls } from '../../../lib/api';
+import { apiUrls } from '../../../lib/api';
 import { useLeague } from '../../../lib/useLeague';
 import Header from '../../components/Header';
 import LeaderboardCard from '../../components/LeaderboardCard';
@@ -15,19 +15,17 @@ export default function HomePage() {
   const { user, isLoaded } = useUser();
   const { leagueId } = useLeague();
 
+  // fetcher is provided globally by SWRConfig in Providers
   const { data: leaderboard } = useSWR<LeaderboardEntry[]>(
-    user ? apiUrls.leaderboard(leagueId, 10) : null,
-    fetcher
+    user ? apiUrls.leaderboard(leagueId, 10) : null
   );
 
   const { data: fixtures } = useSWR<NextMatch[]>(
-    user ? apiUrls.nextMatches(user.id, '2d') : null,
-    fetcher
+    user ? apiUrls.nextMatches(user.id, '2d') : null
   );
 
   const { data: userForm } = useSWR<FormDraft>(
-    user ? apiUrls.myForm() : null,
-    fetcher
+    user ? apiUrls.myForm() : null
   );
 
   if (!isLoaded) {

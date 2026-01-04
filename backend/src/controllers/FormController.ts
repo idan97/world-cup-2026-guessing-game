@@ -2,15 +2,32 @@ import { Request, Response } from 'express';
 import { BaseController } from './BaseController';
 import { z } from 'zod';
 import { FormModel } from '../models/Form';
+import { MatchModel } from '../models/Match';
 import { Stage, Outcome } from '@prisma/client';
 import logger from '../logger';
+import prisma from '../db';
 
 // Validation schemas
 const matchPickSchema = z.object({
-  matchId: z.number().int().positive(),
+  matchId: z.string().min(1),
   predScoreA: z.number().int().min(0),
   predScoreB: z.number().int().min(0),
   predOutcome: z.nativeEnum(Outcome),
+}).refine((data) => {
+  // Validate that outcome matches the scores
+  // W = team 1 wins, L = team 2 wins, D = draw
+  if (data.predOutcome === 'W' && data.predScoreA <= data.predScoreB) {
+    return false;
+  }
+  if (data.predOutcome === 'L' && data.predScoreB <= data.predScoreA) {
+    return false;
+  }
+  if (data.predOutcome === 'D' && data.predScoreA !== data.predScoreB) {
+    return false;
+  }
+  return true;
+}, {
+  message: 'Predicted outcome must match the predicted scores',
 });
 
 const advancePickSchema = z.object({
@@ -197,6 +214,42 @@ export class FormController extends BaseController {
         return this.badRequest(res, 'Invalid picks data', result.error.errors);
       }
       const { matchPicks, advancePicks, topScorerPicks } = result.data;
+
+      // Validate that all matchIds exist
+      if (matchPicks && matchPicks.length > 0) {
+        const matchIds = matchPicks.map((p) => p.matchId);
+        const matches = await MatchModel.findByIds(matchIds);
+        
+        if (matches.length !== matchIds.length) {
+          const foundIds = matches.map((m) => m.id);
+          const missingIds = matchIds.filter((id) => !foundIds.includes(id));
+          return this.badRequest(
+            res,
+            `Invalid match IDs: ${missingIds.join(', ')}`
+          );
+        }
+      }
+
+      // Validate that all teamIds exist
+      if (advancePicks && advancePicks.length > 0) {
+        const teamIds = [...new Set(advancePicks.map((p) => p.teamId))];
+        const teams = await prisma.team.findMany({
+          where: {
+            id: {
+              in: teamIds,
+            },
+          },
+        });
+
+        if (teams.length !== teamIds.length) {
+          const foundIds = teams.map((t) => t.id);
+          const missingIds = teamIds.filter((id) => !foundIds.includes(id));
+          return this.badRequest(
+            res,
+            `Invalid team IDs: ${missingIds.join(', ')}`
+          );
+        }
+      }
 
       const formId = req.form!['id'];
 

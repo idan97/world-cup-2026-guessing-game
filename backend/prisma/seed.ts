@@ -1,71 +1,8 @@
-import { LeagueRole, PrismaClient, TeamGroup } from '@prisma/client';
+import { LeagueRole, PrismaClient } from '@prisma/client';
 import { randomBytes } from 'crypto';
+import { teams, matches } from './data';
 
 const prisma = new PrismaClient();
-
-// World Cup 2026 teams (48 teams across 12 groups)
-const teams = [
-  // Group A
-  { id: 'USA', name: 'United States', group: TeamGroup.A },
-  { id: 'MEX', name: 'Mexico', group: TeamGroup.A },
-  { id: 'CAN', name: 'Canada', group: TeamGroup.A },
-  { id: 'JAM', name: 'Jamaica', group: TeamGroup.A },
-  // Group B
-  { id: 'BRA', name: 'Brazil', group: TeamGroup.B },
-  { id: 'ARG', name: 'Argentina', group: TeamGroup.B },
-  { id: 'CHI', name: 'Chile', group: TeamGroup.B },
-  { id: 'PER', name: 'Peru', group: TeamGroup.B },
-  // Group C
-  { id: 'FRA', name: 'France', group: TeamGroup.C },
-  { id: 'ENG', name: 'England', group: TeamGroup.C },
-  { id: 'GER', name: 'Germany', group: TeamGroup.C },
-  { id: 'ESP', name: 'Spain', group: TeamGroup.C },
-  // Group D
-  { id: 'ITA', name: 'Italy', group: TeamGroup.D },
-  { id: 'NED', name: 'Netherlands', group: TeamGroup.D },
-  { id: 'BEL', name: 'Belgium', group: TeamGroup.D },
-  { id: 'POR', name: 'Portugal', group: TeamGroup.D },
-  // Group E
-  { id: 'JPN', name: 'Japan', group: TeamGroup.E },
-  { id: 'KOR', name: 'South Korea', group: TeamGroup.E },
-  { id: 'AUS', name: 'Australia', group: TeamGroup.E },
-  { id: 'NZL', name: 'New Zealand', group: TeamGroup.E },
-  // Group F
-  { id: 'EGY', name: 'Egypt', group: TeamGroup.F },
-  { id: 'MAR', name: 'Morocco', group: TeamGroup.F },
-  { id: 'SEN', name: 'Senegal', group: TeamGroup.F },
-  { id: 'NGA', name: 'Nigeria', group: TeamGroup.F },
-  // Group G
-  { id: 'URU', name: 'Uruguay', group: TeamGroup.G },
-  { id: 'COL', name: 'Colombia', group: TeamGroup.G },
-  { id: 'ECU', name: 'Ecuador', group: TeamGroup.G },
-  { id: 'VEN', name: 'Venezuela', group: TeamGroup.G },
-  // Group H
-  { id: 'DEN', name: 'Denmark', group: TeamGroup.H },
-  { id: 'SWE', name: 'Sweden', group: TeamGroup.H },
-  { id: 'NOR', name: 'Norway', group: TeamGroup.H },
-  { id: 'POL', name: 'Poland', group: TeamGroup.H },
-  // Group I
-  { id: 'RUS', name: 'Russia', group: TeamGroup.I },
-  { id: 'CRO', name: 'Croatia', group: TeamGroup.I },
-  { id: 'SRB', name: 'Serbia', group: TeamGroup.I },
-  { id: 'SUI', name: 'Switzerland', group: TeamGroup.I },
-  // Group J
-  { id: 'TUR', name: 'Turkey', group: TeamGroup.J },
-  { id: 'GRE', name: 'Greece', group: TeamGroup.J },
-  { id: 'CZE', name: 'Czech Republic', group: TeamGroup.J },
-  { id: 'AUT', name: 'Austria', group: TeamGroup.J },
-  // Group K
-  { id: 'IRN', name: 'Iran', group: TeamGroup.K },
-  { id: 'SAU', name: 'Saudi Arabia', group: TeamGroup.K },
-  { id: 'UAE', name: 'United Arab Emirates', group: TeamGroup.K },
-  { id: 'QAT', name: 'Qatar', group: TeamGroup.K },
-  // Group L
-  { id: 'CRC', name: 'Costa Rica', group: TeamGroup.L },
-  { id: 'PAN', name: 'Panama', group: TeamGroup.L },
-  { id: 'HON', name: 'Honduras', group: TeamGroup.L },
-  { id: 'SLV', name: 'El Salvador', group: TeamGroup.L },
-];
 
 async function main(): Promise<void> {
   console.log('🌱 Starting database seed...');
@@ -78,7 +15,7 @@ async function main(): Promise<void> {
       id: 'general',
       name: 'General',
       description: 'Public league for all players.',
-      joinCode: randomBytes(4).toString('hex'), // 8-char random code
+      joinCode: randomBytes(4).toString('hex'),
     },
   });
   console.log('✅ Created/verified General league:', generalLeague.name);
@@ -114,20 +51,134 @@ async function main(): Promise<void> {
 
   // Seed teams
   console.log('📦 Seeding teams...');
+  const createdTeams: Record<string, string> = {}; // fifaCode -> teamId
+  
   for (const team of teams) {
-    await prisma.team.upsert({
-      where: { id: team.id },
-      update: {},
-      create: team,
+    // Check if team exists
+    let createdTeam = await prisma.team.findFirst({
+      where: { fifaCode: team.fifaCode },
     });
+    
+    if (!createdTeam) {
+      createdTeam = await prisma.team.create({
+        data: {
+          fifaCode: team.fifaCode,
+          name: team.name,
+          groupLetter: team.groupLetter,
+          groupPosition: team.groupPosition,
+        },
+      });
+    }
+    
+    createdTeams[team.fifaCode] = createdTeam.id;
   }
   console.log(`✅ Created ${teams.length} teams`);
 
-  // Matches will be fetched/imported via admin API endpoints
-  console.log(
-    '📝 Note: Matches should be imported via POST /api/admin/matches'
-  );
+  // Initialize group standings and link teams
+  console.log('📊 Initializing group standings...');
+  const groupLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
+  let standingsCount = 0;
+  
+  for (const groupLetter of groupLetters) {
+    // Get teams in this group
+    const groupTeams = teams.filter((t) => t.groupLetter === groupLetter);
+    
+    for (let position = 1; position <= 4; position++) {
+      // Find team with this initial position
+      const teamInPosition = groupTeams.find((t) => t.groupPosition === position);
+      const teamId = teamInPosition ? createdTeams[teamInPosition.fifaCode] : null;
+      
+      const existing = await prisma.groupStanding.findFirst({
+        where: { groupLetter, position },
+      });
+      
+      if (!existing) {
+        await prisma.groupStanding.create({
+          data: {
+            groupLetter,
+            position,
+            teamId: teamId || null, // Link team by initial seeding position
+          },
+        });
+      }
+      standingsCount++;
+    }
+  }
+  console.log(`✅ Created ${standingsCount} group standings (linked to teams)`);
+
+  // Initialize third place rankings (for the 8 best 3rd place teams)
+  console.log('🥉 Initializing third place rankings...');
+  // We'll create placeholders for all 12 groups, but only 8 will advance
+  for (const groupLetter of groupLetters) {
+    const existing = await prisma.thirdPlaceRanking.findFirst({
+      where: { groupLetter },
+    });
+    
+    if (!existing) {
+      await prisma.thirdPlaceRanking.create({
+        data: {
+          groupLetter,
+          teamId: null,
+          rank: null, // Will be calculated after group stage
+        },
+      });
+    }
+  }
+  console.log(`✅ Created ${groupLetters.length} third place ranking placeholders`);
+
+  // Seed matches
+  console.log('📦 Seeding matches...');
+  for (const match of matches) {
+    // For group stage matches, resolve team1Id and team2Id
+    let team1Id: string | undefined;
+    let team2Id: string | undefined;
+    
+    if (match.stage === 'GROUP') {
+      // Parse codes like 'A1', 'B2'
+      if (/^[A-L][1-4]$/.test(match.team1Code)) {
+        const groupLetter = match.team1Code[0];
+        const position = parseInt(match.team1Code[1]!);
+        const team = teams.find((t) => t.groupLetter === groupLetter && t.groupPosition === position);
+        if (team) team1Id = createdTeams[team.fifaCode];
+      }
+      
+      if (/^[A-L][1-4]$/.test(match.team2Code)) {
+        const groupLetter = match.team2Code[0];
+        const position = parseInt(match.team2Code[1]!);
+        const team = teams.find((t) => t.groupLetter === groupLetter && t.groupPosition === position);
+        if (team) team2Id = createdTeams[team.fifaCode];
+      }
+    }
+    
+    const existingMatch = await prisma.match.findFirst({
+      where: { matchNumber: match.matchNumber },
+    });
+    
+    if (!existingMatch) {
+      await prisma.match.create({
+        data: {
+          matchNumber: match.matchNumber,
+          stage: match.stage,
+          team1Code: match.team1Code,
+          team2Code: match.team2Code,
+          team1Name: match.team1Name,
+          team2Name: match.team2Name,
+          team1Id: team1Id || null,
+          team2Id: team2Id || null,
+          scheduledAt: match.scheduledAt,
+          venue: match.venue,
+        },
+      });
+    }
+  }
+  console.log(`✅ Created ${matches.length} matches (group stage teams linked)`);
+
   console.log('🎉 Database seeding completed!');
+  console.log('\n📋 Summary:');
+  console.log(`   - ${teams.length} teams`);
+  console.log(`   - ${standingsCount} group standings`);
+  console.log(`   - ${groupLetters.length} third place rankings`);
+  console.log(`   - ${matches.length} matches`);
 }
 
 main()

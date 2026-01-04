@@ -1,0 +1,170 @@
+### World Cup 2026 API Examples
+### Use with REST Client extension in VSCode or import to Postman
+
+@baseUrl = http://localhost:3000/api
+@token = your_clerk_jwt_token_here
+
+###############################################################################
+# STANDINGS API
+###############################################################################
+
+### Get all standings
+GET {{baseUrl}}/standings
+
+### Get standings for specific groups (A and B)
+GET {{baseUrl}}/standings?group=A&group=B
+
+### Get standings for group A only
+GET {{baseUrl}}/standings/A
+
+### Get third place rankings
+GET {{baseUrl}}/standings/third-place/rankings
+
+###############################################################################
+# MATCHES API
+###############################################################################
+
+### Get all matches
+GET {{baseUrl}}/matches
+
+### Get GROUP stage matches
+GET {{baseUrl}}/matches?stage=GROUP
+
+### Get GROUP stage matches for group A
+GET {{baseUrl}}/matches?stage=GROUP&group=A
+
+### Get upcoming matches (limit 5)
+GET {{baseUrl}}/matches?upcoming=true&limit=5
+
+### Get R16 matches
+GET {{baseUrl}}/matches?stage=R16
+
+### Get single match by ID
+GET {{baseUrl}}/matches/match_cuid_here
+
+### Get matches by stage (alternative route)
+GET {{baseUrl}}/matches/stage/GROUP
+
+###############################################################################
+# PREDICTIONS API (Requires Authentication)
+###############################################################################
+
+### Get my predictions
+GET {{baseUrl}}/predictions/my
+Authorization: Bearer {{token}}
+
+### Create/Update match predictions
+POST {{baseUrl}}/predictions/matches
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "predictions": [
+    {
+      "matchId": "match_cuid_1",
+      "predScoreA": 2,
+      "predScoreB": 1
+    },
+    {
+      "matchId": "match_cuid_2",
+      "predScoreA": 1,
+      "predScoreB": 1
+    },
+    {
+      "matchId": "match_cuid_3",
+      "predScoreA": 0,
+      "predScoreB": 2
+    }
+  ]
+}
+
+### Create/Update advance predictions
+POST {{baseUrl}}/predictions/advances
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "predictions": [
+    {
+      "stage": "F",
+      "teamId": "team_france_id"
+    },
+    {
+      "stage": "F",
+      "teamId": "team_brazil_id"
+    },
+    {
+      "stage": "SF",
+      "teamId": "team_argentina_id"
+    },
+    {
+      "stage": "SF",
+      "teamId": "team_germany_id"
+    }
+  ]
+}
+
+### Create/Update top scorer prediction
+POST {{baseUrl}}/predictions/top-scorer
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "playerName": "Kylian Mbappé"
+}
+
+###############################################################################
+# FORMS API (Existing)
+###############################################################################
+
+### Get my form
+GET {{baseUrl}}/forms/me
+Authorization: Bearer {{token}}
+
+### Create a new form
+POST {{baseUrl}}/forms
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nickname": "Idan #2"
+}
+
+### Get form with all picks
+GET {{baseUrl}}/forms/form_id_here/with-picks
+Authorization: Bearer {{token}}
+
+### Update form nickname
+PUT {{baseUrl}}/forms/form_id_here
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nickname": "Idan Updated"
+}
+
+### Submit form
+POST {{baseUrl}}/forms/form_id_here/submit
+Authorization: Bearer {{token}}
+
+###############################################################################
+# ADMIN API (Requires Admin Role)
+###############################################################################
+
+### Update match result
+POST {{baseUrl}}/admin/matches/match_id_here/result
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "team1Score": 2,
+  "team2Score": 1
+}
+
+###############################################################################
+# HEALTH CHECK
+###############################################################################
+
+### Health check
+GET {{baseUrl}}/../health
+

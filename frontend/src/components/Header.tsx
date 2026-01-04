@@ -19,14 +19,22 @@ export default function Header() {
               WC Predictions
             </Link>
 
-            <nav className="hidden md:flex space-x-4">
+            <nav className="hidden md:flex space-x-4 space-x-reverse">
               <Link
                 href="/home"
                 className={`hover:text-blue-300 transition-colors ${
                   pathname === '/home' ? 'text-blue-300' : ''
                 }`}
               >
-                Home
+                בית
+              </Link>
+              <Link
+                href="/forms/bracket"
+                className={`hover:text-blue-300 transition-colors ${
+                  pathname === '/forms/bracket' ? 'text-blue-300' : ''
+                }`}
+              >
+                טופס ניבויים
               </Link>
               <Link
                 href="/leaderboard"
@@ -34,7 +42,7 @@ export default function Header() {
                   pathname === '/leaderboard' ? 'text-blue-300' : ''
                 }`}
               >
-                Leaderboard
+                טבלת דירוג
               </Link>
             </nav>
           </div>

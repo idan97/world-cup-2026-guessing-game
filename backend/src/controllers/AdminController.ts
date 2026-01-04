@@ -1,35 +1,43 @@
 import { Request, Response } from 'express';
 import { BaseController } from './BaseController';
 import { MatchModel } from '../models/Match';
+import { updateMatchResult } from '../services/MatchResultService';
 import { z } from 'zod';
-import { Stage } from '@prisma/client';
+import { Stage, PrismaClient } from '@prisma/client';
 import logger from '../logger';
+
+const prisma = new PrismaClient();
 
 // Validation schemas
 const createMatchSchema = z.object({
-  id: z.number().int().positive(),
+  matchNumber: z.number().int().positive(),
   stage: z.nativeEnum(Stage),
-  slot: z.string().min(1),
-  kickoff: z.string().datetime().or(z.date()),
-  teamAId: z.string().nullable().optional(),
-  teamBId: z.string().nullable().optional(),
+  team1Code: z.string().min(1),
+  team2Code: z.string().min(1),
+  team1Name: z.string().optional(),
+  team2Name: z.string().optional(),
+  scheduledAt: z.string().datetime().or(z.date()),
+  team1Id: z.string().nullable().optional(),
+  team2Id: z.string().nullable().optional(),
+  venue: z.string().optional(),
+  venueCode: z.number().int().optional(),
 });
 
 const updateMatchSchema = z.object({
   stage: z.nativeEnum(Stage).optional(),
-  slot: z.string().min(1).optional(),
-  kickoff: z.string().datetime().or(z.date()).optional(),
-  teamAId: z.string().nullable().optional(),
-  teamBId: z.string().nullable().optional(),
-  scoreA: z.number().int().min(0).nullable().optional(),
-  scoreB: z.number().int().min(0).nullable().optional(),
-  winnerTeamId: z.string().nullable().optional(),
+  team1Code: z.string().min(1).optional(),
+  team2Code: z.string().min(1).optional(),
+  scheduledAt: z.string().datetime().or(z.date()).optional(),
+  team1Id: z.string().nullable().optional(),
+  team2Id: z.string().nullable().optional(),
+  team1Score: z.number().int().min(0).nullable().optional(),
+  team2Score: z.number().int().min(0).nullable().optional(),
+  winnerId: z.string().nullable().optional(),
 });
 
 const matchResultSchema = z.object({
-  scoreA: z.number().int().min(0),
-  scoreB: z.number().int().min(0),
-  winnerTeamId: z.string().nullable().optional(),
+  team1Score: z.number().int().min(0),
+  team2Score: z.number().int().min(0),
 });
 
 const bulkCreateMatchesSchema = z.array(createMatchSchema);
@@ -63,8 +71,8 @@ export class AdminController extends BaseController {
   // GET /admin/matches/:id - Get specific match
   public getMatch = async (req: Request, res: Response): Promise<Response> => {
     try {
-      const matchId = parseInt(req.params['id'] || '');
-      if (isNaN(matchId)) {
+      const matchId = req.params['id'];
+      if (!matchId) {
         return this.badRequest(res, 'Invalid match ID');
       }
 
@@ -97,15 +105,20 @@ export class AdminController extends BaseController {
         }
 
         const matches = result.data.map((match) => ({
-          id: match.id,
+          matchNumber: match.matchNumber,
           stage: match.stage,
-          slot: match.slot,
-          kickoff:
-            typeof match.kickoff === 'string'
-              ? new Date(match.kickoff)
-              : match.kickoff,
-          teamAId: match.teamAId ?? null,
-          teamBId: match.teamBId ?? null,
+          team1Code: match.team1Code,
+          team2Code: match.team2Code,
+          ...(match.team1Name && { team1Name: match.team1Name }),
+          ...(match.team2Name && { team2Name: match.team2Name }),
+          scheduledAt:
+            typeof match.scheduledAt === 'string'
+              ? new Date(match.scheduledAt)
+              : match.scheduledAt,
+          team1Id: match.team1Id ?? null,
+          team2Id: match.team2Id ?? null,
+          ...(match.venue && { venue: match.venue }),
+          ...(match.venueCode && { venueCode: match.venueCode }),
         }));
 
         await MatchModel.createMany(matches);
@@ -131,15 +144,20 @@ export class AdminController extends BaseController {
         }
 
         const matchData = {
-          id: result.data.id,
+          matchNumber: result.data.matchNumber,
           stage: result.data.stage,
-          slot: result.data.slot,
-          kickoff:
-            typeof result.data.kickoff === 'string'
-              ? new Date(result.data.kickoff)
-              : result.data.kickoff,
-          teamAId: result.data.teamAId ?? null,
-          teamBId: result.data.teamBId ?? null,
+          team1Code: result.data.team1Code,
+          team2Code: result.data.team2Code,
+          ...(result.data.team1Name && { team1Name: result.data.team1Name }),
+          ...(result.data.team2Name && { team2Name: result.data.team2Name }),
+          scheduledAt:
+            typeof result.data.scheduledAt === 'string'
+              ? new Date(result.data.scheduledAt)
+              : result.data.scheduledAt,
+          team1Id: result.data.team1Id ?? null,
+          team2Id: result.data.team2Id ?? null,
+          ...(result.data.venue && { venue: result.data.venue }),
+          ...(result.data.venueCode && { venueCode: result.data.venueCode }),
         };
 
         const match = await MatchModel.create(matchData);
@@ -166,8 +184,8 @@ export class AdminController extends BaseController {
     res: Response
   ): Promise<Response> => {
     try {
-      const matchId = parseInt(req.params['id'] || '');
-      if (isNaN(matchId)) {
+      const matchId = req.params['id'];
+      if (!matchId) {
         return this.badRequest(res, 'Invalid match ID');
       }
 
@@ -177,8 +195,8 @@ export class AdminController extends BaseController {
       }
 
       const updateData: any = { ...result.data };
-      if (updateData.kickoff && typeof updateData.kickoff === 'string') {
-        updateData.kickoff = new Date(updateData.kickoff);
+      if (updateData.scheduledAt && typeof updateData.scheduledAt === 'string') {
+        updateData.scheduledAt = new Date(updateData.scheduledAt);
       }
 
       const match = await MatchModel.update(matchId, updateData);
@@ -204,9 +222,9 @@ export class AdminController extends BaseController {
     res: Response
   ): Promise<Response> => {
     try {
-      const matchId = parseInt(req.params['id'] || '');
-      if (isNaN(matchId)) {
-        return this.badRequest(res, 'Invalid match ID');
+      const matchNumber = parseInt(req.params['id'] || '');
+      if (isNaN(matchNumber)) {
+        return this.badRequest(res, 'Invalid match number');
       }
 
       const result = matchResultSchema.safeParse(req.body);
@@ -214,38 +232,41 @@ export class AdminController extends BaseController {
         return this.badRequest(res, 'Invalid result data', result.error.errors);
       }
 
-      // Determine winner if not provided
-      let winnerTeamId: string | null = result.data.winnerTeamId ?? null;
-      if (!winnerTeamId && result.data.scoreA !== result.data.scoreB) {
-        // Fetch match to get team IDs
-        const match = await MatchModel.findById(matchId);
-        if (!match) {
-          return this.notFound(res, 'Match not found');
-        }
+      // Find match by matchNumber to get its id
+      const match = await prisma.match.findUnique({
+        where: { matchNumber },
+      });
 
-        if (result.data.scoreA > result.data.scoreB) {
-          winnerTeamId = match.teamAId;
-        } else if (result.data.scoreB > result.data.scoreA) {
-          winnerTeamId = match.teamBId;
-        }
+      if (!match) {
+        return this.notFound(res, 'Match not found');
       }
 
-      const updatedMatch = await MatchModel.updateResult(
-        matchId,
-        result.data.scoreA,
-        result.data.scoreB,
-        winnerTeamId
-      );
+      // Use the MatchResultService which handles all cascading updates
+      await updateMatchResult({
+        matchId: match.id,
+        team1Score: result.data.team1Score,
+        team2Score: result.data.team2Score,
+      });
+
+      // Get updated match
+      const updatedMatch = await prisma.match.findUnique({
+        where: { id: match.id },
+        include: {
+          team1: true,
+          team2: true,
+          winner: true,
+        },
+      });
 
       logger.info(
         {
-          matchId,
+          matchNumber,
+          matchId: match.id,
           userId: req.auth.userId,
-          scoreA: result.data.scoreA,
-          scoreB: result.data.scoreB,
-          winnerTeamId,
+          team1Score: result.data.team1Score,
+          team2Score: result.data.team2Score,
         },
-        'Match result recorded'
+        'Match result recorded and standings updated'
       );
 
       return this.success(
@@ -253,11 +274,20 @@ export class AdminController extends BaseController {
         updatedMatch,
         'Match result recorded successfully'
       );
-    } catch (error) {
+    } catch (error: any) {
       logger.error(
-        { error, matchId: req.params['id'], userId: req.auth.userId },
+        { error, matchNumber: req.params['id'], userId: req.auth.userId },
         'Error recording match result'
       );
+      
+      if (error.message?.includes('not found')) {
+        return this.notFound(res, error.message);
+      }
+      
+      if (error.message?.includes('already finished')) {
+        return this.badRequest(res, error.message);
+      }
+      
       return this.internalError(res, error);
     }
   };
