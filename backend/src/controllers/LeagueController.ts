@@ -4,6 +4,9 @@ import { z } from 'zod';
 import { LeagueModel } from '../models/League';
 import { LeagueRole } from '@prisma/client';
 import logger from '../logger';
+import { calculateTotalScore, calculateTiebreakers } from '../services/ScoringService';
+import { TournamentSettingsService } from '../services/TournamentSettingsService';
+import prisma from '../db';
 
 // Validation schemas
 const createLeagueSchema = z.object({
@@ -304,6 +307,123 @@ export class LeagueController extends BaseController {
 
       return this.success(res, null, 'Email added to allow list');
     } catch (error) {
+      return this.internalError(res, error);
+    }
+  };
+
+  // GET /leagues/:id/leaderboard - Get league leaderboard with tiebreakers
+  public getLeagueLeaderboard = async (
+    req: Request,
+    res: Response
+  ): Promise<Response> => {
+    try {
+      const leagueId = req.league!.id;
+
+      // Get the actual top scorer from tournament settings
+      const actualTopScorer = await TournamentSettingsService.getActualTopScorer();
+
+      // Get all members of the league
+      const members = await prisma.leagueMember.findMany({
+        where: { leagueId },
+        include: {
+          user: {
+            select: {
+              id: true,
+              displayName: true,
+              email: true,
+            },
+          },
+        },
+      });
+
+      // Get forms for each user
+      const leaderboardEntries = [];
+
+      for (const member of members) {
+        const form = await prisma.form.findUnique({
+          where: { ownerId: member.userId },
+        });
+
+        if (!form) {
+          // User doesn't have a form yet
+          continue;
+        }
+
+        // Calculate total score
+        const scoreData = await calculateTotalScore(form.id, actualTopScorer);
+
+        // Calculate tiebreaker statistics
+        const tiebreakers = await calculateTiebreakers(form.id, actualTopScorer);
+
+        leaderboardEntries.push({
+          userId: member.userId,
+          displayName: member.user.displayName,
+          formId: form.id,
+          nickname: form.nickname,
+          totalPoints: scoreData.totalPoints,
+          tiebreakers: {
+            exactResults: tiebreakers.exactResults,
+            correctDecisions: tiebreakers.correctDecisions,
+            correctChampion: tiebreakers.correctChampion,
+            correctTopScorer: tiebreakers.correctTopScorer,
+            correctAdvances: tiebreakers.correctAdvances,
+          },
+        });
+      }
+
+      // Sort by total points and tiebreakers
+      leaderboardEntries.sort((a, b) => {
+        // 1. Total points (descending)
+        if (a.totalPoints !== b.totalPoints) {
+          return b.totalPoints - a.totalPoints;
+        }
+
+        // 2. Exact results (descending)
+        if (a.tiebreakers.exactResults !== b.tiebreakers.exactResults) {
+          return b.tiebreakers.exactResults - a.tiebreakers.exactResults;
+        }
+
+        // 3. Correct decisions (descending)
+        if (a.tiebreakers.correctDecisions !== b.tiebreakers.correctDecisions) {
+          return b.tiebreakers.correctDecisions - a.tiebreakers.correctDecisions;
+        }
+
+        // 4. Correct champion
+        if (a.tiebreakers.correctChampion !== b.tiebreakers.correctChampion) {
+          return a.tiebreakers.correctChampion ? -1 : 1;
+        }
+
+        // 5. Correct top scorer
+        if (a.tiebreakers.correctTopScorer !== b.tiebreakers.correctTopScorer) {
+          return a.tiebreakers.correctTopScorer ? -1 : 1;
+        }
+
+        // 6-9. Correct advances by stage (F > SF > QF > R16)
+        const stages = ['F', 'SF', 'QF', 'R16'];
+        for (const stage of stages) {
+          const aAdvances = a.tiebreakers.correctAdvances[stage] || 0;
+          const bAdvances = b.tiebreakers.correctAdvances[stage] || 0;
+          if (aAdvances !== bAdvances) {
+            return bAdvances - aAdvances;
+          }
+        }
+
+        // If all tiebreakers are equal, maintain original order
+        return 0;
+      });
+
+      // Add rank to each entry
+      const leaderboard = leaderboardEntries.map((entry, index) => ({
+        rank: index + 1,
+        ...entry,
+      }));
+
+      return this.success(res, leaderboard);
+    } catch (error) {
+      logger.error(
+        { error, leagueId: req.league?.id },
+        'Error fetching league leaderboard'
+      );
       return this.internalError(res, error);
     }
   };

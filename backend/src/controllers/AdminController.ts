@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { BaseController } from './BaseController';
 import { MatchModel } from '../models/Match';
 import { updateMatchResult } from '../services/MatchResultService';
+import { TournamentSettingsService } from '../services/TournamentSettingsService';
 import { z } from 'zod';
 import { Stage, PrismaClient } from '@prisma/client';
 import logger from '../logger';
@@ -41,6 +42,10 @@ const matchResultSchema = z.object({
 });
 
 const bulkCreateMatchesSchema = z.array(createMatchSchema);
+
+const updateTopScorerSchema = z.object({
+  playerName: z.string().nullable(),
+});
 
 export class AdminController extends BaseController {
   // GET /admin/matches - List all matches with optional filters
@@ -288,6 +293,59 @@ export class AdminController extends BaseController {
         return this.badRequest(res, error.message);
       }
       
+      return this.internalError(res, error);
+    }
+  };
+
+  // GET /admin/tournament/settings - Get tournament settings
+  public getTournamentSettings = async (
+    req: Request,
+    res: Response
+  ): Promise<Response> => {
+    try {
+      const settings = await TournamentSettingsService.getSettings();
+      return this.success(res, settings);
+    } catch (error) {
+      logger.error(
+        { error, userId: req.auth.userId },
+        'Error fetching tournament settings'
+      );
+      return this.internalError(res, error);
+    }
+  };
+
+  // PUT /admin/tournament/top-scorer - Update actual top scorer
+  public updateTopScorer = async (
+    req: Request,
+    res: Response
+  ): Promise<Response> => {
+    try {
+      const result = updateTopScorerSchema.safeParse(req.body);
+      if (!result.success) {
+        return this.badRequest(
+          res,
+          'Invalid top scorer data',
+          result.error.errors
+        );
+      }
+
+      await TournamentSettingsService.setActualTopScorer(result.data.playerName);
+
+      logger.info(
+        { userId: req.auth.userId, playerName: result.data.playerName },
+        'Top scorer updated'
+      );
+
+      return this.success(
+        res,
+        { actualTopScorer: result.data.playerName },
+        'Top scorer updated successfully'
+      );
+    } catch (error) {
+      logger.error(
+        { error, userId: req.auth.userId },
+        'Error updating top scorer'
+      );
       return this.internalError(res, error);
     }
   };

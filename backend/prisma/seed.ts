@@ -1,8 +1,38 @@
-import { LeagueRole, PrismaClient } from '@prisma/client';
+import { LeagueRole, Outcome, PrismaClient } from '@prisma/client';
 import { randomBytes } from 'crypto';
 import { teams, matches } from './data';
 
 const prisma = new PrismaClient();
+
+// Fake users for testing
+const fakeUsers = [
+  { email: 'player1@test.com', displayName: 'שחקן א', nickname: 'שחקן א' },
+  { email: 'player2@test.com', displayName: 'שחקן ב', nickname: 'שחקן ב' },
+  { email: 'player3@test.com', displayName: 'שחקן ג', nickname: 'שחקן ג' },
+  { email: 'player4@test.com', displayName: 'שחקן ד', nickname: 'שחקן ד' },
+  { email: 'player5@test.com', displayName: 'שחקן ה', nickname: 'שחקן ה' },
+];
+
+// Random top scorers for fake forms
+const topScorers = [
+  'Kylian Mbappé',
+  'Erling Haaland',
+  'Lionel Messi',
+  'Cristiano Ronaldo',
+  'Harry Kane',
+];
+
+// Generate random score (0-4)
+function randomScore(): number {
+  return Math.floor(Math.random() * 5);
+}
+
+// Calculate outcome based on scores
+function getOutcome(scoreA: number, scoreB: number): Outcome {
+  if (scoreA > scoreB) return Outcome.W;
+  if (scoreA < scoreB) return Outcome.L;
+  return Outcome.D;
+}
 
 async function main(): Promise<void> {
   console.log('🌱 Starting database seed...');
@@ -173,12 +203,106 @@ async function main(): Promise<void> {
   }
   console.log(`✅ Created ${matches.length} matches (group stage teams linked)`);
 
+  // Seed fake users with forms for testing
+  console.log('👥 Creating fake users and forms for testing...');
+  
+  // Get all match IDs
+  const allMatches = await prisma.match.findMany({
+    select: { id: true, matchNumber: true },
+    orderBy: { matchNumber: 'asc' },
+  });
+  
+  for (let i = 0; i < fakeUsers.length; i++) {
+    const fakeUser = fakeUsers[i]!;
+    
+    // Create or update user
+    const user = await prisma.user.upsert({
+      where: { email: fakeUser.email },
+      update: { displayName: fakeUser.displayName },
+      create: {
+        email: fakeUser.email,
+        displayName: fakeUser.displayName,
+      },
+    });
+    
+    // Add user to General league
+    await prisma.leagueMember.upsert({
+      where: {
+        leagueId_userId: {
+          leagueId: generalLeague.id,
+          userId: user.id,
+        },
+      },
+      update: {},
+      create: {
+        leagueId: generalLeague.id,
+        userId: user.id,
+        role: LeagueRole.PLAYER,
+      },
+    });
+    
+    // Create form for user
+    const form = await prisma.form.upsert({
+      where: { ownerId: user.id },
+      update: { nickname: fakeUser.nickname },
+      create: {
+        ownerId: user.id,
+        nickname: fakeUser.nickname,
+        submittedAt: new Date(),
+        isFinal: true,
+      },
+    });
+    
+    // Create match picks for all 104 matches
+    for (const match of allMatches) {
+      const predScoreA = randomScore();
+      const predScoreB = randomScore();
+      const predOutcome = getOutcome(predScoreA, predScoreB);
+      
+      await prisma.matchPick.upsert({
+        where: {
+          formId_matchId: {
+            formId: form.id,
+            matchId: match.id,
+          },
+        },
+        update: {
+          predScoreA,
+          predScoreB,
+          predOutcome,
+        },
+        create: {
+          formId: form.id,
+          matchId: match.id,
+          predScoreA,
+          predScoreB,
+          predOutcome,
+        },
+      });
+    }
+    
+    // Create top scorer pick
+    await prisma.topScorerPick.upsert({
+      where: { formId: form.id },
+      update: { playerName: topScorers[i]! },
+      create: {
+        formId: form.id,
+        playerName: topScorers[i]!,
+      },
+    });
+    
+    console.log(`   ✅ Created form for ${fakeUser.displayName} with ${allMatches.length} match picks`);
+  }
+  
+  console.log(`✅ Created ${fakeUsers.length} fake users with forms`);
+
   console.log('🎉 Database seeding completed!');
   console.log('\n📋 Summary:');
   console.log(`   - ${teams.length} teams`);
   console.log(`   - ${standingsCount} group standings`);
   console.log(`   - ${groupLetters.length} third place rankings`);
   console.log(`   - ${matches.length} matches`);
+  console.log(`   - ${fakeUsers.length} fake users with forms (${allMatches.length} picks each)`);
 }
 
 main()

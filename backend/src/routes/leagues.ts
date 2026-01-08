@@ -17,6 +17,12 @@ router.post('/:code/join', requireAuth, leagueController.joinLeague);
 
 // League member routes (require league membership)
 router.get(
+  '/:id/leaderboard',
+  validateLeagueId,
+  requireLeagueMembership,
+  leagueController.getLeagueLeaderboard
+);
+router.get(
   '/:id/messages',
   validateLeagueId,
   requireLeagueMembership,

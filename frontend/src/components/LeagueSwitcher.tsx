@@ -15,7 +15,10 @@ export default function LeagueSwitcher() {
   const [isJoining, setIsJoining] = useState(false);
   const [joinError, setJoinError] = useState('');
 
-  const { data: leagues = [], mutate } = useSWR<League[]>('/leagues');
+  const { data: leagues = [], mutate } = useSWR<League[]>('/leagues', {
+    shouldRetryOnError: false,
+    errorRetryCount: 0,
+  });
 
   const currentLeague = leagues.find(league => league.id === leagueId);
 

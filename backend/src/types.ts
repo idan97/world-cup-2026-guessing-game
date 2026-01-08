@@ -1,14 +1,14 @@
 /* enums */
-import type { Stage, Outcome, LeagueRole, TeamGroup } from '@prisma/client';
+import type { Stage, Outcome, LeagueRole } from '@prisma/client';
 
 // Re-export enums for convenience
-export { Stage, Outcome, LeagueRole, TeamGroup };
+export { Stage, Outcome, LeagueRole };
 
 /* reference */
 export interface Team {
   id: string; // 'FRA'
   name: string; // 'France'
-  group: TeamGroup; // 12 groups for 2026
+  
 }
 
 /* users */
@@ -114,4 +114,11 @@ export interface ScoringRun {
   runAt: Date;
   delta: number; // points change
   details: { matchId?: string; stage?: Stage; note?: string };
+}
+
+/* tournament settings */
+export interface TournamentSettings {
+  id: string;
+  actualTopScorer: string | null;
+  updatedAt: Date;
 }

@@ -17,15 +17,18 @@ export default function HomePage() {
 
   // fetcher is provided globally by SWRConfig in Providers
   const { data: leaderboard } = useSWR<LeaderboardEntry[]>(
-    user ? apiUrls.leaderboard(leagueId, 10) : null
+    user ? apiUrls.leaderboard(leagueId, 10) : null,
+    { shouldRetryOnError: false, errorRetryCount: 0 }
   );
 
   const { data: fixtures } = useSWR<NextMatch[]>(
-    user ? apiUrls.nextMatches(user.id, '2d') : null
+    user ? apiUrls.nextMatches(user.id, '2d') : null,
+    { shouldRetryOnError: false, errorRetryCount: 0 }
   );
 
   const { data: userForm } = useSWR<FormDraft>(
-    user ? apiUrls.myForm() : null
+    user ? apiUrls.myForm() : null,
+    { shouldRetryOnError: false, errorRetryCount: 0 }
   );
 
   if (!isLoaded) {

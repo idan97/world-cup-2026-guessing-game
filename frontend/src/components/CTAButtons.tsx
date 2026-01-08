@@ -21,10 +21,10 @@ export default function CTAButtons({ formId }: CTAButtonsProps) {
         </Link>
 
         <Link
-          href={`/forms/compare?league=${leagueId}#simulate`}
+          href="/simulate"
           className="bg-green-600 hover:bg-green-700 text-white text-center py-3 px-6 rounded-lg font-semibold transition-colors block"
         >
-          Simulate What-If
+          תוצאות אמת
         </Link>
       </div>
 

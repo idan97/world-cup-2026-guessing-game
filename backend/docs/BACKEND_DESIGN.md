@@ -412,11 +412,11 @@ Points are awarded based on 90-minute results only (no extra time/penalties).
 | Stage         | Outcome Points | Exact Score | Advance Bonus | Total Possible |
 | ------------- | -------------- | ----------- | ------------- | -------------- |
 | Group         | +1             | +3          | +2            | 6              |
-| Round of 32   | +3             | +3          | +4            | 10             |
-| Round of 16   | +5             | +3          | +6            | 14             |
-| Quarter-final | +7             | +3          | +8            | 18             |
-| Semi-final    | +9             | +3          | +10           | 22             |
-| Final         | +11            | +3          | —             | 14             |
+| Round of 32   | +3             | +3          | +2            | 8              |
+| Round of 16   | +3             | +3          | +4            | 10             |
+| Quarter-final | +5             | +3          | +6            | 14             |
+| Semi-final    | +7             | +3          | +8            | 18             |
+| Final         | +9             | +3          | —             | 12             |
 | Top Scorer    | —              | —           | +8            | 8              |
 
 ### Scoring Rules
@@ -446,7 +446,7 @@ Awarded if a team the user predicted to reach a stage actually reaches it.
 **Example:**
 - User predicted France to reach Final
 - France reaches Final
-- **Award:** Final advance bonus (+10 points)
+- **Award:** Semi-final advance bonus (+8 points)
 
 **Important:** Slot alignment required. If user predicted "Winner of QF-1" to reach Final, but that team loses QF-1, no points awarded even if the team was correct.
 

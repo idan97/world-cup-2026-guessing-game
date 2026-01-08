@@ -16,7 +16,8 @@ export default function FormExample() {
 
   // Use SWR to fetch the user's form data (fetcher provided by SWRConfig)
   const { data: formData, mutate } = useSWR<FormDraft>(
-    apiUrls.myForm()
+    apiUrls.myForm(),
+    { shouldRetryOnError: false, errorRetryCount: 0 }
   );
 
   // Save form draft using direct API call

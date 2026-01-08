@@ -178,6 +178,93 @@ GET /api/matches?stage=R16
 
 ---
 
+### Leagues API
+
+#### `GET /api/leagues/:id/leaderboard`
+קבלת לוח התוצאות של ליגה עם חישוב ניקוד ושוברי שוויון
+
+**Authentication:** נדרש JWT + חברות בליגה
+
+**Path Parameters:**
+- `id`: מזהה הליגה
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Success",
+  "data": [
+    {
+      "rank": 1,
+      "userId": "user_123",
+      "displayName": "יוסי כהן",
+      "formId": "form_456",
+      "nickname": "המנצח",
+      "totalPoints": 125,
+      "tiebreakers": {
+        "exactResults": 15,
+        "correctDecisions": 42,
+        "correctChampion": true,
+        "correctTopScorer": true,
+        "correctAdvances": {
+          "F": 2,
+          "SF": 3,
+          "QF": 6,
+          "R16": 12
+        }
+      }
+    },
+    {
+      "rank": 2,
+      "userId": "user_456",
+      "displayName": "דני לוי",
+      "formId": "form_789",
+      "nickname": "דני #1",
+      "totalPoints": 125,
+      "tiebreakers": {
+        "exactResults": 14,
+        "correctDecisions": 40,
+        "correctChampion": true,
+        "correctTopScorer": false,
+        "correctAdvances": {
+          "F": 2,
+          "SF": 4,
+          "QF": 5,
+          "R16": 11
+        }
+      }
+    }
+  ]
+}
+```
+
+**Scoring Matrix:**
+- **שלב הבתים (GROUP)**: הכרעה=1, תוצאה=+3, עלייה ל-R32=2
+- **שלב 32 (R32)**: הכרעה=3, תוצאה=+3, עלייה לשמינית=2
+- **שמינית גמר (R16)**: הכרעה=3, תוצאה=+3, עלייה לרבע=4
+- **רבע גמר (QF)**: הכרעה=5, תוצאה=+3, עלייה לחצי=6
+- **חצי גמר (SF)**: הכרעה=7, תוצאה=+3, עלייה לגמר=8
+- **גמר (F)**: הכרעה=9, תוצאה=+3
+- **מלך השערים**: 8 נקודות
+
+**Tiebreakers (בסדר יורד של חשיבות):**
+1. ניקוד כולל
+2. פגיעות מדויקות בתוצאה (exactResults)
+3. פגיעות בהכרעה (correctDecisions)
+4. פגיעה באלופה (correctChampion)
+5. פגיעה במלך השערים (correctTopScorer)
+6. עליית קבוצות לגמר (correctAdvances.F)
+7. עליית קבוצות לחצי גמר (correctAdvances.SF)
+8. עליית קבוצות לרבע גמר (correctAdvances.QF)
+9. עליית קבוצות לשמינית גמר (correctAdvances.R16)
+
+**Notes:**
+- הניקוד מחושב בזמן אמת לכל קריאת API
+- רק משחקים שהסתיימו (isFinished=true) נכללים בחישוב
+- משתמשים ללא טופס לא מופיעים בליגה
+
+---
+
 ### Predictions API
 
 כל ה-endpoints דורשים authentication (Clerk JWT).
@@ -407,6 +494,12 @@ curl -X POST http://localhost:3000/api/predictions/matches \
 ### Get my predictions:
 ```bash
 curl http://localhost:3000/api/predictions/my \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+### Get league leaderboard:
+```bash
+curl http://localhost:3000/api/leagues/LEAGUE_ID/leaderboard \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 

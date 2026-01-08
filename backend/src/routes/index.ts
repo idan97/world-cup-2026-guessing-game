@@ -6,6 +6,7 @@ import adminRoutes from './admin';
 import matchRoutes from './matches';
 import standingsRoutes from './standings';
 import predictionsRoutes from './predictions';
+import simulateRoutes from './simulate';
 
 const router = Router();
 
@@ -17,5 +18,6 @@ router.use('/standings', standingsRoutes);
 router.use('/predictions', predictionsRoutes);
 router.use('/forms', formRoutes);
 router.use('/admin', adminRoutes);
+router.use('/simulate', simulateRoutes);
 
 export default router;

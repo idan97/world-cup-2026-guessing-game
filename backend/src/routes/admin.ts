@@ -15,4 +15,8 @@ router.post('/matches', adminController.createMatches);
 router.put('/matches/:id', adminController.updateMatch);
 router.post('/matches/:id/result', adminController.recordMatchResult);
 
+// Tournament settings routes
+router.get('/tournament/settings', adminController.getTournamentSettings);
+router.put('/tournament/top-scorer', adminController.updateTopScorer);
+
 export default router;

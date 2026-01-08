@@ -44,6 +44,14 @@ export default function Header() {
               >
                 טבלת דירוג
               </Link>
+              <Link
+                href="/simulate"
+                className={`hover:text-violet-300 transition-colors ${
+                  pathname === '/simulate' ? 'text-violet-300' : ''
+                }`}
+              >
+                🔮 What If?
+              </Link>
             </nav>
           </div>
 

@@ -6,8 +6,10 @@ import useSWR from 'swr';
 import Header from '../../../components/Header';
 import GroupStage from './components/GroupStage';
 import KnockoutBracket from './components/KnockoutBracket';
+import TopScorerPicker from './components/TopScorerPicker';
 import { apiUrls, http } from '../../../../lib/api';
 import { useApi } from '../../../../lib/useApi';
+import { useAuth } from '@clerk/nextjs';
 import type { 
   GroupDisplay, 
   MatchDisplay, 
@@ -144,14 +146,18 @@ interface FormData {
 
 export default function BracketFormPage() {
   const { user, isLoaded } = useUser();
+  const { getToken } = useAuth();
   const api = useApi();
   
   // State for predictions
   const [matchPredictions, setMatchPredictions] = useState<Map<string, MatchPrediction>>(new Map());
   const [winnerSelections, setWinnerSelections] = useState<Map<string, string>>(new Map());
+  const [topScorer, setTopScorer] = useState<string>('');
+  const [nickname, setNickname] = useState<string>('');
   const [isDirty, setIsDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [isEditingNickname, setIsEditingNickname] = useState(false);
 
   // Fetch data using SWR
   const { data: standingsData, error: standingsError } = useSWR<StandingsResponse>(
@@ -164,28 +170,39 @@ export default function BracketFormPage() {
     { revalidateOnFocus: false }
   );
 
-  const { data: formData } = useSWR<FormData>(
+  const { data: formData, mutate: mutateForm } = useSWR<FormData>(
     user ? apiUrls.myForm() : null,
-    { revalidateOnFocus: false }
+    { 
+      revalidateOnFocus: false,
+      shouldRetryOnError: false,
+      errorRetryCount: 0,
+    }
   );
 
   const { data: myPredictions } = useSWR<{
-    matchPredictions: Array<{
+    matchPicks: Array<{
       matchId: string;
       predScoreA: number;
       predScoreB: number;
     }>;
-    advancePredictions: any[];
+    advancePicks: any[];
+    topScorerPicks: Array<{
+      playerName: string;
+    }>;
   }>(
     user ? apiUrls.myPredictions() : null,
-    { revalidateOnFocus: false }
+    { 
+      revalidateOnFocus: false,
+      shouldRetryOnError: false,
+      errorRetryCount: 0,
+    }
   );
 
   // Initialize predictions from saved data
   useEffect(() => {
-    if (myPredictions?.matchPredictions) {
+    if (myPredictions?.matchPicks) {
       const predMap = new Map<string, MatchPrediction>();
-      myPredictions.matchPredictions.forEach(pred => {
+      myPredictions.matchPicks.forEach(pred => {
         predMap.set(pred.matchId, {
           matchId: pred.matchId,
           predScoreA: pred.predScoreA,
@@ -194,7 +211,22 @@ export default function BracketFormPage() {
       });
       setMatchPredictions(predMap);
     }
+    
+    // Load top scorer prediction
+    if (myPredictions?.topScorerPicks && myPredictions.topScorerPicks.length > 0) {
+      setTopScorer(myPredictions.topScorerPicks[0].playerName || '');
+    }
   }, [myPredictions]);
+
+  // Initialize nickname from formData or user's name
+  useEffect(() => {
+    if (formData?.nickname) {
+      setNickname(formData.nickname);
+    } else if (user && !nickname) {
+      // Default to user's first name if no form exists yet
+      setNickname(user.firstName || user.username || '');
+    }
+  }, [formData, user, nickname]);
 
   // Process groups data with calculated standings based on predictions
   const groups = useMemo<GroupDisplay[]>(() => {
@@ -591,10 +623,16 @@ export default function BracketFormPage() {
     setIsDirty(true);
   }, []);
 
+  // Handle top scorer change
+  const handleTopScorerChange = useCallback((playerName: string) => {
+    setTopScorer(playerName);
+    setIsDirty(true);
+  }, []);
+
   // Save predictions
   const handleSave = async () => {
-    if (!formData) {
-      setMessage({ type: 'error', text: 'אנא צור טופס קודם' });
+    if (!nickname.trim()) {
+      setMessage({ type: 'error', text: 'אנא הזן שם משתמש לטופס' });
       return;
     }
 
@@ -602,9 +640,35 @@ export default function BracketFormPage() {
     setMessage(null);
 
     try {
+      // If no form exists, create one first
+      if (!formData) {
+        const token = await getToken();
+        if (!token) {
+          setMessage({ type: 'error', text: 'אנא התחבר מחדש' });
+          setIsSaving(false);
+          return;
+        }
+        
+        // Create form via API
+        await http.post('/forms', { nickname: nickname.trim() }, token);
+        
+        // Refresh form data
+        await mutateForm();
+        
+        setMessage({ type: 'success', text: '✅ הטופס נוצר בהצלחה! שומר ניבויים...' });
+        
+        // Wait a moment for form to be created, then save predictions
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+
       const predictions = Array.from(matchPredictions.values());
       if (predictions.length > 0) {
         await api.saveMatchPredictions(predictions);
+      }
+      
+      // Save top scorer if provided
+      if (topScorer.trim()) {
+        await api.saveTopScorer(topScorer.trim());
       }
       
       setIsDirty(false);
@@ -683,7 +747,7 @@ export default function BracketFormPage() {
               </button>
               <button
                 onClick={handleSave}
-                disabled={isSaving || isLocked || !isDirty}
+                disabled={isSaving || isLocked}
                 className="px-4 py-2 bg-emerald-600 text-white rounded-lg font-medium text-sm
                            hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed
                            transition-colors flex items-center gap-2"
@@ -697,6 +761,66 @@ export default function BracketFormPage() {
                   <>💾 שמור</>
                 )}
               </button>
+            </div>
+          </div>
+
+          {/* Nickname Section */}
+          <div className="mt-4 bg-white rounded-lg border border-slate-200 p-4 shadow-sm">
+            <div className="flex items-center gap-4">
+              <div className="flex-shrink-0">
+                <span className="text-2xl">👤</span>
+              </div>
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  שם הטופס (כך תופיע בטבלת הדירוג)
+                </label>
+                {isEditingNickname ? (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={nickname}
+                      onChange={(e) => {
+                        setNickname(e.target.value);
+                        setIsDirty(true);
+                      }}
+                      className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm
+                                 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      placeholder="הזן את השם שלך..."
+                      disabled={isLocked}
+                    />
+                    <button
+                      onClick={() => setIsEditingNickname(false)}
+                      className="px-3 py-2 text-emerald-600 hover:bg-emerald-50 rounded-lg text-sm font-medium"
+                    >
+                      ✓ סיום
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg font-semibold text-slate-800">
+                      {nickname || 'ללא שם'}
+                    </span>
+                    {!isLocked && (
+                      <button
+                        onClick={() => setIsEditingNickname(true)}
+                        className="px-2 py-1 text-xs text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded"
+                      >
+                        ✏️ ערוך
+                      </button>
+                    )}
+                    {!formData && (
+                      <span className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded">
+                        טופס חדש - יווצר בשמירה
+                      </span>
+                    )}
+                    {formData && (
+                      <span className="text-xs text-emerald-600 bg-emerald-50 px-2 py-1 rounded">
+                        ✓ טופס קיים
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -748,6 +872,13 @@ export default function BracketFormPage() {
             isLocked={isLocked}
           />
         </section>
+
+        {/* Top Scorer Picker */}
+        <TopScorerPicker
+          value={topScorer}
+          onChange={handleTopScorerChange}
+          isLocked={isLocked}
+        />
 
         {/* Footer Actions */}
         <div className="mt-8 py-6 border-t border-slate-200 flex justify-center gap-4">

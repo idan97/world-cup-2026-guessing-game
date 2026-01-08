@@ -314,3 +314,21 @@ model ScoringRun {
   @@map("scoring_runs")
 }
 
+model TournamentSettings {
+  id              String   @id @default("tournament_2026")
+  actualTopScorer String?  // שם מלך השערים האמיתי (null עד שהמונדיאל מסתיים)
+  updatedAt       DateTime @updatedAt
+
+  @@map("tournament_settings")
+}
+
+model Simulation {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  results     Json     // Map of matchId -> { predScoreA, predScoreB }
+  topScorer   String?
+  updatedAt   DateTime @updatedAt
+
+  @@map("simulations")
+}
+

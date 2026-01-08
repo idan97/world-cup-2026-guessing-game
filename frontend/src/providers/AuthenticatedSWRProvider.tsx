@@ -37,8 +37,12 @@ export default function AuthenticatedSWRProvider({
   const config = useMemo(
     () => ({
       fetcher,
-      revalidateOnFocus: true,
+      revalidateOnFocus: false, // Don't refetch when window gets focus
+      revalidateOnReconnect: false, // Don't refetch when reconnecting
+      refreshInterval: 0, // Disable automatic polling
       dedupingInterval: 2000,
+      shouldRetryOnError: false, // Don't retry on 404 errors
+      errorRetryCount: 0, // Don't retry failed requests
     }),
     [fetcher]
   );
