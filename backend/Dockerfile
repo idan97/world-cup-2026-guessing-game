@@ -15,7 +15,7 @@ COPY . .
 # Build TypeScript
 RUN npm run build
 # Debug - show what's in dist
-RUN echo "=== Contents of dist ===" && ls -la dist/ && echo "=== Done ==
+RUN ls -laR dist/
 # Expose port
 EXPOSE 3000
 
