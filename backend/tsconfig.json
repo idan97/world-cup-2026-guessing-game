@@ -24,7 +24,6 @@
     "noPropertyAccessFromIndexSignature": true,
     "noUncheckedIndexedAccess": true
   },
-  //"include": ["src/**/*", "prisma/**/*"],
-  "files": ["src/types/express.d.ts"],
+  "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
 }
