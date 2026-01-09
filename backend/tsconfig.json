@@ -4,6 +4,7 @@
     "module": "commonjs",
     "lib": ["ES2022"],
     "types": ["node"],
+    "rootDir": "./src",
     "outDir": "./dist",
     "strict": true,
     "esModuleInterop": true,
@@ -23,7 +24,7 @@
     "noPropertyAccessFromIndexSignature": true,
     "noUncheckedIndexedAccess": true
   },
-  "include": ["src/**/*", "prisma/**/*"],
+  //"include": ["src/**/*", "prisma/**/*"],
   "files": ["src/types/express.d.ts"],
   "exclude": ["node_modules", "dist"]
 }
