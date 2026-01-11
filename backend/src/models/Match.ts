@@ -163,30 +163,6 @@ export class MatchModel {
     });
   }
 
-  // Update match result
-  static async updateResult(
-    id: string,
-    team1Score: number,
-    team2Score: number,
-    winnerId: string | null,
-  ): Promise<MatchWithRelations> {
-    return await prisma.match.update({
-      where: { id },
-      data: {
-        team1Score,
-        team2Score,
-        winnerId,
-        isFinished: true,
-        playedAt: new Date(),
-      },
-      include: {
-        team1: true,
-        team2: true,
-        winner: true,
-      },
-    });
-  }
-
   // Bulk create matches
   static async createMany(
     matches: Array<{

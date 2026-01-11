@@ -4,10 +4,9 @@ import { MatchModel } from '../models/Match';
 import { updateMatchResult } from '../services/MatchResultService';
 import { TournamentSettingsService } from '../services/TournamentSettingsService';
 import { z } from 'zod';
-import { Stage, PrismaClient } from '@prisma/client';
+import { Stage } from '@prisma/client';
 import logger from '../logger';
-
-const prisma = new PrismaClient();
+import prisma from '../db';
 
 // Validation schemas
 const createMatchSchema = z.object({
@@ -199,36 +198,14 @@ export class AdminController extends BaseController {
         return this.badRequest(res, 'Invalid match data', result.error.errors);
       }
 
-      // Build update data object with proper types
+      // Build update data object, removing undefined values
       const { scheduledAt, ...restData } = result.data;
-      const updateData: Parameters<typeof MatchModel.update>[1] = {};
+      const updateData: Parameters<typeof MatchModel.update>[1] =
+        Object.fromEntries(
+          Object.entries(restData).filter(([, value]) => value !== undefined),
+        ) as Parameters<typeof MatchModel.update>[1];
 
-      // Copy only defined properties
-      if (restData.stage !== undefined) {
-        updateData.stage = restData.stage;
-      }
-      if (restData.team1Code !== undefined) {
-        updateData.team1Code = restData.team1Code;
-      }
-      if (restData.team2Code !== undefined) {
-        updateData.team2Code = restData.team2Code;
-      }
-      if (restData.team1Id !== undefined) {
-        updateData.team1Id = restData.team1Id;
-      }
-      if (restData.team2Id !== undefined) {
-        updateData.team2Id = restData.team2Id;
-      }
-      if (restData.team1Score !== undefined) {
-        updateData.team1Score = restData.team1Score;
-      }
-      if (restData.team2Score !== undefined) {
-        updateData.team2Score = restData.team2Score;
-      }
-      if (restData.winnerId !== undefined) {
-        updateData.winnerId = restData.winnerId;
-      }
-
+      // Handle scheduledAt separately (needs date conversion)
       if (scheduledAt !== undefined) {
         updateData.scheduledAt =
           typeof scheduledAt === 'string' ? new Date(scheduledAt) : scheduledAt;

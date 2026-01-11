@@ -98,7 +98,7 @@ export const createAuthenticatedApi = (token: string) => ({
 // Legacy - for backward compatibility (will throw if used without token)
 export const api = createAuthenticatedApi('');
 
-// Predictions API functions (using new structure)
+// Predictions API functions (now using Forms API)
 export const predictionsApi = {
   // Get all matches
   getMatches: async (params?: { stage?: string; group?: string; limit?: number }) => {
@@ -118,31 +118,53 @@ export const predictionsApi = {
     return http.get('/standings');
   },
 
-  // Save match predictions (new API)
-  saveMatchPredictions: async (predictions: Array<{
-    matchId: string;
-    predScoreA: number;
-    predScoreB: number;
-  }>) => {
-    return http.post('/predictions/matches', { predictions });
+  // Save match predictions (using Forms API - requires formId and token)
+  saveMatchPredictions: async (
+    formId: string,
+    predictions: Array<{
+      matchId: string;
+      predScoreA: number;
+      predScoreB: number;
+    }>,
+    token: string
+  ) => {
+    const api = createAuthenticatedApi(token);
+    return api.savePicks(formId, {
+      matchPicks: predictions.map(p => ({
+        matchId: p.matchId,
+        predScoreA: p.predScoreA,
+        predScoreB: p.predScoreB,
+        predOutcome: p.predScoreA > p.predScoreB ? 'W' : p.predScoreA < p.predScoreB ? 'L' : 'D',
+      })),
+    });
   },
 
-  // Save advance predictions (new API)
-  saveAdvancePredictions: async (predictions: Array<{
-    stage: 'R32' | 'R16' | 'QF' | 'SF' | 'F';
-    teamId: string;
-  }>) => {
-    return http.post('/predictions/advances', { predictions });
+  // Save advance predictions (using Forms API - requires formId and token)
+  saveAdvancePredictions: async (
+    formId: string,
+    predictions: Array<{
+      stage: 'R32' | 'R16' | 'QF' | 'SF' | 'F';
+      teamId: string;
+    }>,
+    token: string
+  ) => {
+    const api = createAuthenticatedApi(token);
+    return api.savePicks(formId, {
+      advancePicks: predictions,
+    });
   },
 
-  // Save top scorer prediction (new API)
-  saveTopScorer: async (playerName: string) => {
-    return http.post('/predictions/top-scorer', { playerName });
+  // Save top scorer prediction (using Forms API - requires formId and token)
+  saveTopScorer: async (formId: string, playerName: string, token: string) => {
+    const api = createAuthenticatedApi(token);
+    return api.savePicks(formId, {
+      topScorerPicks: [{ playerName }],
+    });
   },
 
-  // Get my predictions
-  getMyPredictions: async () => {
-    return http.get('/predictions/my');
+  // Get my predictions (using Forms API - requires formId)
+  getMyPredictions: async (formId: string, token?: string) => {
+    return http.get(`/forms/${formId}/with-picks`, token);
   },
 };
 
@@ -151,7 +173,7 @@ export const apiUrls = {
   leaderboard: (leagueId: string, limit = 10) =>
     `/leagues/${leagueId}/leaderboard?limit=${limit}`,
   myForm: () => `/forms/me`,
-  myPredictions: () => `/predictions/my`,
+  myPredictions: (formId?: string) => formId ? `/forms/${formId}/with-picks` : null,
   matches: (params?: { stage?: string; group?: string }) => {
     const query = new URLSearchParams();
     if (params?.stage) query.append('stage', params.stage);

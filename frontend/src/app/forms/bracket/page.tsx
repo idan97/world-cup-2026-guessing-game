@@ -10,24 +10,39 @@ import TopScorerPicker from './components/TopScorerPicker';
 import { apiUrls, http } from '../../../../lib/api';
 import { useApi } from '../../../../lib/useApi';
 import { useAuth } from '@clerk/nextjs';
-import type { 
-  GroupDisplay, 
-  MatchDisplay, 
-  MatchPrediction, 
-  MatchData, 
-  Team, 
-  GroupStanding,
-  Stage,
-  GROUPS 
+import type {
+  GroupDisplay,
+  MatchDisplay,
+  MatchPrediction,
+  MatchData,
+  Team,
 } from './types';
 
 // Fetch all needed data
-const GROUPS_LIST = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'] as const;
+const GROUPS_LIST = [
+  'A',
+  'B',
+  'C',
+  'D',
+  'E',
+  'F',
+  'G',
+  'H',
+  'I',
+  'J',
+  'K',
+  'L',
+] as const;
 
 // R32 mapping based on FIFA World Cup 2026 format (from worldcup2026_data.json)
 // Maps match numbers to which group positions play each other
 // 8 matches have third-place teams: 74, 77, 79, 80, 81, 82, 85, 87
-const R32_MAPPING: Array<{ match: number; team1: string; team2: string; thirdPlaceCode?: string }> = [
+const R32_MAPPING: Array<{
+  match: number;
+  team1: string;
+  team2: string;
+  thirdPlaceCode?: string;
+}> = [
   { match: 73, team1: '2A', team2: '2B' },
   { match: 74, team1: '1E', team2: '3rd', thirdPlaceCode: '3-ABCDF' },
   { match: 75, team1: '1F', team2: '2C' },
@@ -53,59 +68,210 @@ type ThirdPlaceAssignments = Record<number, string>;
 
 // Function to calculate which 8 third-place teams advance and their assignments
 function calculateThirdPlaceAssignments(
-  thirdPlaceTeams: Array<{ groupLetter: string; points: number; goalDiff: number; goalsFor: number }>
+  thirdPlaceTeams: Array<{
+    groupLetter: string;
+    points: number;
+    goalDiff: number;
+    goalsFor: number;
+  }>
 ): { qualifiedGroups: string[]; assignments: ThirdPlaceAssignments } | null {
   if (thirdPlaceTeams.length !== 12) return null;
-  
+
   // Sort by: 1) Points, 2) Goal Diff, 3) Goals For
   const sorted = [...thirdPlaceTeams].sort((a, b) => {
     if (a.points !== b.points) return b.points - a.points;
     if (a.goalDiff !== b.goalDiff) return b.goalDiff - a.goalDiff;
     return b.goalsFor - a.goalsFor;
   });
-  
+
   // Top 8 advance
-  const qualifiedGroups = sorted.slice(0, 8).map(t => t.groupLetter);
-  
+  const qualifiedGroups = sorted.slice(0, 8).map((t) => t.groupLetter);
+
   // Create sorted combination key
   const combinationKey = [...qualifiedGroups].sort().join('');
-  
+
   // Lookup table for third place assignments (all 495 combinations)
   // Format: { [match_number]: group_letter }
   // This is a simplified version - in production would load from JSON
   const assignments = getThirdPlaceAssignmentsForCombination(combinationKey);
-  
+
   return { qualifiedGroups, assignments };
 }
 
 // Simplified lookup - maps combination to match assignments
 // In full implementation, this would come from third_place_assignments.json
-function getThirdPlaceAssignmentsForCombination(combination: string): ThirdPlaceAssignments {
+function getThirdPlaceAssignmentsForCombination(
+  combination: string
+): ThirdPlaceAssignments {
   // Common combinations for World Cup 2026
   const lookupTable: Record<string, ThirdPlaceAssignments> = {
-    'ABCDEFGH': { 74: 'G', 77: 'F', 79: 'H', 80: 'E', 81: 'B', 82: 'A', 85: 'C', 87: 'D' },
-    'ABCDEFGI': { 74: 'G', 77: 'F', 79: 'I', 80: 'E', 81: 'B', 82: 'A', 85: 'C', 87: 'D' },
-    'ABCDEFGJ': { 74: 'G', 77: 'F', 79: 'J', 80: 'E', 81: 'B', 82: 'A', 85: 'C', 87: 'D' },
-    'ABCDEFGK': { 74: 'G', 77: 'F', 79: 'K', 80: 'E', 81: 'B', 82: 'A', 85: 'C', 87: 'D' },
-    'ABCDEFGL': { 74: 'G', 77: 'F', 79: 'L', 80: 'E', 81: 'B', 82: 'A', 85: 'C', 87: 'D' },
-    'ABCDEFHI': { 74: 'F', 77: 'H', 79: 'I', 80: 'E', 81: 'B', 82: 'A', 85: 'C', 87: 'D' },
-    'ABCDEFHJ': { 74: 'F', 77: 'H', 79: 'J', 80: 'E', 81: 'B', 82: 'A', 85: 'C', 87: 'D' },
-    'ABCDEFHK': { 74: 'F', 77: 'H', 79: 'K', 80: 'E', 81: 'B', 82: 'A', 85: 'C', 87: 'D' },
-    'ABCDEFHL': { 74: 'F', 77: 'H', 79: 'L', 80: 'E', 81: 'B', 82: 'A', 85: 'C', 87: 'D' },
-    'ABCDEFIJ': { 74: 'F', 77: 'I', 79: 'J', 80: 'E', 81: 'B', 82: 'A', 85: 'C', 87: 'D' },
-    'ABCDEFIK': { 74: 'F', 77: 'I', 79: 'K', 80: 'E', 81: 'B', 82: 'A', 85: 'C', 87: 'D' },
-    'ABCDEFIL': { 74: 'F', 77: 'I', 79: 'L', 80: 'E', 81: 'B', 82: 'A', 85: 'C', 87: 'D' },
-    'ABCDEFJK': { 74: 'F', 77: 'J', 79: 'K', 80: 'E', 81: 'B', 82: 'A', 85: 'C', 87: 'D' },
-    'ABCDEFJL': { 74: 'F', 77: 'J', 79: 'L', 80: 'E', 81: 'B', 82: 'A', 85: 'C', 87: 'D' },
-    'ABCDEFKL': { 74: 'F', 77: 'K', 79: 'L', 80: 'E', 81: 'B', 82: 'A', 85: 'C', 87: 'D' },
-    'EFGHIJKL': { 74: 'J', 77: 'G', 79: 'E', 80: 'K', 81: 'I', 82: 'H', 85: 'F', 87: 'L' },
+    ABCDEFGH: {
+      74: 'G',
+      77: 'F',
+      79: 'H',
+      80: 'E',
+      81: 'B',
+      82: 'A',
+      85: 'C',
+      87: 'D',
+    },
+    ABCDEFGI: {
+      74: 'G',
+      77: 'F',
+      79: 'I',
+      80: 'E',
+      81: 'B',
+      82: 'A',
+      85: 'C',
+      87: 'D',
+    },
+    ABCDEFGJ: {
+      74: 'G',
+      77: 'F',
+      79: 'J',
+      80: 'E',
+      81: 'B',
+      82: 'A',
+      85: 'C',
+      87: 'D',
+    },
+    ABCDEFGK: {
+      74: 'G',
+      77: 'F',
+      79: 'K',
+      80: 'E',
+      81: 'B',
+      82: 'A',
+      85: 'C',
+      87: 'D',
+    },
+    ABCDEFGL: {
+      74: 'G',
+      77: 'F',
+      79: 'L',
+      80: 'E',
+      81: 'B',
+      82: 'A',
+      85: 'C',
+      87: 'D',
+    },
+    ABCDEFHI: {
+      74: 'F',
+      77: 'H',
+      79: 'I',
+      80: 'E',
+      81: 'B',
+      82: 'A',
+      85: 'C',
+      87: 'D',
+    },
+    ABCDEFHJ: {
+      74: 'F',
+      77: 'H',
+      79: 'J',
+      80: 'E',
+      81: 'B',
+      82: 'A',
+      85: 'C',
+      87: 'D',
+    },
+    ABCDEFHK: {
+      74: 'F',
+      77: 'H',
+      79: 'K',
+      80: 'E',
+      81: 'B',
+      82: 'A',
+      85: 'C',
+      87: 'D',
+    },
+    ABCDEFHL: {
+      74: 'F',
+      77: 'H',
+      79: 'L',
+      80: 'E',
+      81: 'B',
+      82: 'A',
+      85: 'C',
+      87: 'D',
+    },
+    ABCDEFIJ: {
+      74: 'F',
+      77: 'I',
+      79: 'J',
+      80: 'E',
+      81: 'B',
+      82: 'A',
+      85: 'C',
+      87: 'D',
+    },
+    ABCDEFIK: {
+      74: 'F',
+      77: 'I',
+      79: 'K',
+      80: 'E',
+      81: 'B',
+      82: 'A',
+      85: 'C',
+      87: 'D',
+    },
+    ABCDEFIL: {
+      74: 'F',
+      77: 'I',
+      79: 'L',
+      80: 'E',
+      81: 'B',
+      82: 'A',
+      85: 'C',
+      87: 'D',
+    },
+    ABCDEFJK: {
+      74: 'F',
+      77: 'J',
+      79: 'K',
+      80: 'E',
+      81: 'B',
+      82: 'A',
+      85: 'C',
+      87: 'D',
+    },
+    ABCDEFJL: {
+      74: 'F',
+      77: 'J',
+      79: 'L',
+      80: 'E',
+      81: 'B',
+      82: 'A',
+      85: 'C',
+      87: 'D',
+    },
+    ABCDEFKL: {
+      74: 'F',
+      77: 'K',
+      79: 'L',
+      80: 'E',
+      81: 'B',
+      82: 'A',
+      85: 'C',
+      87: 'D',
+    },
+    EFGHIJKL: {
+      74: 'J',
+      77: 'G',
+      79: 'E',
+      80: 'K',
+      81: 'I',
+      82: 'H',
+      85: 'F',
+      87: 'L',
+    },
     // Default fallback - will handle any combination by distributing alphabetically
   };
-  
+
   if (lookupTable[combination]) {
     return lookupTable[combination];
   }
-  
+
   // Fallback: distribute third-place teams to matches in order
   const groups = combination.split('');
   const thirdPlaceMatches = [74, 77, 79, 80, 81, 82, 85, 87];
@@ -117,21 +283,24 @@ function getThirdPlaceAssignmentsForCombination(combination: string): ThirdPlace
 }
 
 interface StandingsResponse {
-  groups: Record<string, Array<{
-    id: string;
-    groupLetter: string;
-    position: number;
-    teamId: string | null;
-    played: number;
-    wins: number;
-    draws: number;
-    losses: number;
-    goalsFor: number;
-    goalsAgainst: number;
-    goalDiff: number;
-    points: number;
-    team: Team | null;
-  }>>;
+  groups: Record<
+    string,
+    Array<{
+      id: string;
+      groupLetter: string;
+      position: number;
+      teamId: string | null;
+      played: number;
+      wins: number;
+      draws: number;
+      losses: number;
+      goalsFor: number;
+      goalsAgainst: number;
+      goalDiff: number;
+      points: number;
+      team: Team | null;
+    }>
+  >;
   metadata: {
     groupsIncluded: string[];
     totalGroups: number;
@@ -148,22 +317,27 @@ export default function BracketFormPage() {
   const { user, isLoaded } = useUser();
   const { getToken } = useAuth();
   const api = useApi();
-  
+
   // State for predictions
-  const [matchPredictions, setMatchPredictions] = useState<Map<string, MatchPrediction>>(new Map());
-  const [winnerSelections, setWinnerSelections] = useState<Map<string, string>>(new Map());
+  const [matchPredictions, setMatchPredictions] = useState<
+    Map<string, MatchPrediction>
+  >(new Map());
+  const [winnerSelections, setWinnerSelections] = useState<Map<string, string>>(
+    new Map()
+  );
   const [topScorer, setTopScorer] = useState<string>('');
   const [nickname, setNickname] = useState<string>('');
   const [isDirty, setIsDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [message, setMessage] = useState<{
+    type: 'success' | 'error';
+    text: string;
+  } | null>(null);
   const [isEditingNickname, setIsEditingNickname] = useState(false);
 
   // Fetch data using SWR
-  const { data: standingsData, error: standingsError } = useSWR<StandingsResponse>(
-    '/standings',
-    { revalidateOnFocus: false }
-  );
+  const { data: standingsData, error: standingsError } =
+    useSWR<StandingsResponse>('/standings', { revalidateOnFocus: false });
 
   const { data: allMatches, error: matchesError } = useSWR<MatchData[]>(
     '/matches',
@@ -172,7 +346,7 @@ export default function BracketFormPage() {
 
   const { data: formData, mutate: mutateForm } = useSWR<FormData>(
     user ? apiUrls.myForm() : null,
-    { 
+    {
       revalidateOnFocus: false,
       shouldRetryOnError: false,
       errorRetryCount: 0,
@@ -189,20 +363,17 @@ export default function BracketFormPage() {
     topScorerPicks: Array<{
       playerName: string;
     }>;
-  }>(
-    user ? apiUrls.myPredictions() : null,
-    { 
-      revalidateOnFocus: false,
-      shouldRetryOnError: false,
-      errorRetryCount: 0,
-    }
-  );
+  }>(user && formData?.id ? apiUrls.myPredictions(formData.id) : null, {
+    revalidateOnFocus: false,
+    shouldRetryOnError: false,
+    errorRetryCount: 0,
+  });
 
   // Initialize predictions from saved data
   useEffect(() => {
     if (myPredictions?.matchPicks) {
       const predMap = new Map<string, MatchPrediction>();
-      myPredictions.matchPicks.forEach(pred => {
+      myPredictions.matchPicks.forEach((pred) => {
         predMap.set(pred.matchId, {
           matchId: pred.matchId,
           predScoreA: pred.predScoreA,
@@ -211,9 +382,12 @@ export default function BracketFormPage() {
       });
       setMatchPredictions(predMap);
     }
-    
+
     // Load top scorer prediction
-    if (myPredictions?.topScorerPicks && myPredictions.topScorerPicks.length > 0) {
+    if (
+      myPredictions?.topScorerPicks &&
+      myPredictions.topScorerPicks.length > 0
+    ) {
       setTopScorer(myPredictions.topScorerPicks[0].playerName || '');
     }
   }, [myPredictions]);
@@ -232,16 +406,19 @@ export default function BracketFormPage() {
   const groups = useMemo<GroupDisplay[]>(() => {
     if (!standingsData?.groups || !allMatches) return [];
 
-    return GROUPS_LIST.map(letter => {
+    return GROUPS_LIST.map((letter) => {
       const groupStandings = standingsData.groups[letter] || [];
       const groupMatches = allMatches.filter(
-        m => m.stage === 'GROUP' && 
-             (m.team1Code.endsWith(letter) || m.team2Code.endsWith(letter) ||
-              m.team1?.groupLetter === letter || m.team2?.groupLetter === letter)
+        (m) =>
+          m.stage === 'GROUP' &&
+          (m.team1Code.endsWith(letter) ||
+            m.team2Code.endsWith(letter) ||
+            m.team1?.groupLetter === letter ||
+            m.team2?.groupLetter === letter)
       );
 
       // Calculate predicted standings based on predictions
-      const standingsWithPredictions = groupStandings.map(s => ({
+      const standingsWithPredictions = groupStandings.map((s) => ({
         position: s.position,
         team: s.team,
         played: 0,
@@ -255,12 +432,16 @@ export default function BracketFormPage() {
       }));
 
       // Process each match prediction
-      groupMatches.forEach(match => {
+      groupMatches.forEach((match) => {
         const pred = matchPredictions.get(match.id);
         if (!pred) return;
 
-        const team1Idx = standingsWithPredictions.findIndex(s => s.team?.id === match.team1?.id);
-        const team2Idx = standingsWithPredictions.findIndex(s => s.team?.id === match.team2?.id);
+        const team1Idx = standingsWithPredictions.findIndex(
+          (s) => s.team?.id === match.team1?.id
+        );
+        const team2Idx = standingsWithPredictions.findIndex(
+          (s) => s.team?.id === match.team2?.id
+        );
 
         if (team1Idx === -1 || team2Idx === -1) return;
 
@@ -292,7 +473,7 @@ export default function BracketFormPage() {
       });
 
       // Calculate goal difference
-      standingsWithPredictions.forEach(s => {
+      standingsWithPredictions.forEach((s) => {
         s.goalDiff = s.goalsFor - s.goalsAgainst;
       });
 
@@ -310,9 +491,11 @@ export default function BracketFormPage() {
 
       return {
         letter,
-        teams: groupStandings.map(s => s.team).filter((t): t is Team => t !== null),
+        teams: groupStandings
+          .map((s) => s.team)
+          .filter((t): t is Team => t !== null),
         standings: sortedStandings,
-        matches: groupMatches.map(match => ({
+        matches: groupMatches.map((match) => ({
           match,
           prediction: matchPredictions.get(match.id),
           team1: match.team1,
@@ -325,43 +508,60 @@ export default function BracketFormPage() {
   // Get predicted qualified teams from groups
   // Only return teams when all 4 teams in the group have at least 1 predicted match
   const predictedQualifiers = useMemo(() => {
-    const result: Record<string, { 
-      first: Team | null; 
-      second: Team | null; 
-      third: Team | null;
-      thirdStats: { points: number; goalDiff: number; goalsFor: number } | null;
-      isComplete: boolean;
-    }> = {};
-    
-    groups.forEach(group => {
+    const result: Record<
+      string,
+      {
+        first: Team | null;
+        second: Team | null;
+        third: Team | null;
+        thirdStats: {
+          points: number;
+          goalDiff: number;
+          goalsFor: number;
+        } | null;
+        isComplete: boolean;
+      }
+    > = {};
+
+    groups.forEach((group) => {
       // Check if all 4 teams have played at least 1 predicted match
-      const allTeamsHavePredictions = group.standings.every(s => s.played >= 1);
-      
+      const allTeamsHavePredictions = group.standings.every(
+        (s) => s.played >= 1
+      );
+
       const thirdPlace = group.standings[2];
       result[group.letter] = {
-        first: allTeamsHavePredictions ? (group.standings[0]?.team || null) : null,
-        second: allTeamsHavePredictions ? (group.standings[1]?.team || null) : null,
-        third: allTeamsHavePredictions ? (thirdPlace?.team || null) : null,
-        thirdStats: allTeamsHavePredictions && thirdPlace ? {
-          points: thirdPlace.points,
-          goalDiff: thirdPlace.goalDiff,
-          goalsFor: thirdPlace.goalsFor,
-        } : null,
+        first: allTeamsHavePredictions
+          ? group.standings[0]?.team || null
+          : null,
+        second: allTeamsHavePredictions
+          ? group.standings[1]?.team || null
+          : null,
+        third: allTeamsHavePredictions ? thirdPlace?.team || null : null,
+        thirdStats:
+          allTeamsHavePredictions && thirdPlace
+            ? {
+                points: thirdPlace.points,
+                goalDiff: thirdPlace.goalDiff,
+                goalsFor: thirdPlace.goalsFor,
+              }
+            : null,
         isComplete: allTeamsHavePredictions,
       };
     });
-    
+
     return result;
   }, [groups]);
 
   // Calculate third place assignments (which 8 third-place teams advance and where they play)
   const thirdPlaceResult = useMemo(() => {
-    const completedGroups = Object.entries(predictedQualifiers)
-      .filter(([_, q]) => q.isComplete && q.thirdStats);
-    
+    const completedGroups = Object.entries(predictedQualifiers).filter(
+      ([_, q]) => q.isComplete && q.thirdStats
+    );
+
     // Need all 12 groups to have predictions to calculate
     if (completedGroups.length !== 12) return null;
-    
+
     const thirdPlaceTeams = completedGroups.map(([letter, q]) => ({
       groupLetter: letter,
       team: q.third,
@@ -369,48 +569,58 @@ export default function BracketFormPage() {
       goalDiff: q.thirdStats!.goalDiff,
       goalsFor: q.thirdStats!.goalsFor,
     }));
-    
+
     return calculateThirdPlaceAssignments(thirdPlaceTeams);
   }, [predictedQualifiers]);
 
   // Helper to get team by position code (e.g., "1A", "2B", "3rd")
-  const getTeamByCode = useCallback((code: string, matchNumber: number): Team | null => {
-    // Third place code
-    if (code === '3rd') {
-      if (!thirdPlaceResult?.assignments) return null;
-      const groupLetter = thirdPlaceResult.assignments[matchNumber];
-      if (!groupLetter) return null;
-      return predictedQualifiers[groupLetter]?.third || null;
-    }
-    
-    const position = parseInt(code[0]);
-    const groupLetter = code[1];
-    
-    if (!predictedQualifiers[groupLetter]) return null;
-    
-    if (position === 1) return predictedQualifiers[groupLetter].first;
-    if (position === 2) return predictedQualifiers[groupLetter].second;
-    if (position === 3) return predictedQualifiers[groupLetter].third;
-    
-    return null;
-  }, [predictedQualifiers, thirdPlaceResult]);
+  const getTeamByCode = useCallback(
+    (code: string, matchNumber: number): Team | null => {
+      // Third place code
+      if (code === '3rd') {
+        if (!thirdPlaceResult?.assignments) return null;
+        const groupLetter = thirdPlaceResult.assignments[matchNumber];
+        if (!groupLetter) return null;
+        return predictedQualifiers[groupLetter]?.third || null;
+      }
+
+      const position = parseInt(code[0]);
+      const groupLetter = code[1];
+
+      if (!predictedQualifiers[groupLetter]) return null;
+
+      if (position === 1) return predictedQualifiers[groupLetter].first;
+      if (position === 2) return predictedQualifiers[groupLetter].second;
+      if (position === 3) return predictedQualifiers[groupLetter].third;
+
+      return null;
+    },
+    [predictedQualifiers, thirdPlaceResult]
+  );
 
   // Get winner of a match based on prediction
-  const getMatchWinner = useCallback((matchId: string, team1?: Team | null, team2?: Team | null): Team | null => {
-    const pred = matchPredictions.get(matchId);
-    if (!pred) return null;
-    
-    if (pred.predScoreA > pred.predScoreB) return team1 || null;
-    if (pred.predScoreB > pred.predScoreA) return team2 || null;
-    
-    // For tied knockout matches, check winner selection
-    const winnerId = winnerSelections.get(matchId);
-    if (winnerId) {
-      return winnerId === team1?.id ? team1 : team2 || null;
-    }
-    
-    return null;
-  }, [matchPredictions, winnerSelections]);
+  const getMatchWinner = useCallback(
+    (
+      matchId: string,
+      team1?: Team | null,
+      team2?: Team | null
+    ): Team | null => {
+      const pred = matchPredictions.get(matchId);
+      if (!pred) return null;
+
+      if (pred.predScoreA > pred.predScoreB) return team1 || null;
+      if (pred.predScoreB > pred.predScoreA) return team2 || null;
+
+      // For tied knockout matches, check winner selection
+      const winnerId = winnerSelections.get(matchId);
+      if (winnerId) {
+        return winnerId === team1?.id ? team1 : team2 || null;
+      }
+
+      return null;
+    },
+    [matchPredictions, winnerSelections]
+  );
 
   // Process knockout matches with predicted teams from group standings
   const knockoutMatches = useMemo(() => {
@@ -427,13 +637,17 @@ export default function BracketFormPage() {
 
     // R32 matches - use predicted teams from group standings
     const r32 = allMatches
-      .filter(m => m.stage === 'R32')
+      .filter((m) => m.stage === 'R32')
       .sort((a, b) => a.matchNumber - b.matchNumber)
-      .map(match => {
-        const mapping = R32_MAPPING.find(m => m.match === match.matchNumber);
-        const predictedTeam1 = mapping ? getTeamByCode(mapping.team1, match.matchNumber) : null;
-        const predictedTeam2 = mapping ? getTeamByCode(mapping.team2, match.matchNumber) : null;
-        
+      .map((match) => {
+        const mapping = R32_MAPPING.find((m) => m.match === match.matchNumber);
+        const predictedTeam1 = mapping
+          ? getTeamByCode(mapping.team1, match.matchNumber)
+          : null;
+        const predictedTeam2 = mapping
+          ? getTeamByCode(mapping.team2, match.matchNumber)
+          : null;
+
         return {
           match,
           prediction: matchPredictions.get(match.id),
@@ -445,16 +659,16 @@ export default function BracketFormPage() {
 
     // Build a map of R32 winners for R16
     const r32Winners = new Map<number, Team | null>();
-    r32.forEach(m => {
+    r32.forEach((m) => {
       const winner = getMatchWinner(m.match.id, m.team1, m.team2);
       r32Winners.set(m.match.matchNumber, winner);
     });
 
     // R16 matches - use winners from R32
     const r16 = allMatches
-      .filter(m => m.stage === 'R16')
+      .filter((m) => m.stage === 'R16')
       .sort((a, b) => a.matchNumber - b.matchNumber)
-      .map(match => {
+      .map((match) => {
         // R16 match numbers and which R32 matches they come from
         // Match 89: W74 vs W77, Match 90: W73 vs W75
         // Match 91: W76 vs W78, Match 92: W79 vs W80
@@ -470,11 +684,11 @@ export default function BracketFormPage() {
           95: [86, 88],
           96: [85, 87],
         };
-        
+
         const sources = r16Mapping[match.matchNumber];
         const team1 = sources ? r32Winners.get(sources[0]) : match.team1;
         const team2 = sources ? r32Winners.get(sources[1]) : match.team2;
-        
+
         return {
           match,
           prediction: matchPredictions.get(match.id),
@@ -485,7 +699,7 @@ export default function BracketFormPage() {
 
     // Build R16 winners map
     const r16Winners = new Map<number, Team | null>();
-    r16.forEach(m => {
+    r16.forEach((m) => {
       const winner = getMatchWinner(m.match.id, m.team1, m.team2);
       r16Winners.set(m.match.matchNumber, winner);
     });
@@ -499,13 +713,13 @@ export default function BracketFormPage() {
     };
 
     const qf = allMatches
-      .filter(m => m.stage === 'QF')
+      .filter((m) => m.stage === 'QF')
       .sort((a, b) => a.matchNumber - b.matchNumber)
-      .map(match => {
+      .map((match) => {
         const sources = qfMapping[match.matchNumber];
         const team1 = sources ? r16Winners.get(sources[0]) : match.team1;
         const team2 = sources ? r16Winners.get(sources[1]) : match.team2;
-        
+
         return {
           match,
           prediction: matchPredictions.get(match.id),
@@ -516,7 +730,7 @@ export default function BracketFormPage() {
 
     // Build QF winners map
     const qfWinners = new Map<number, Team | null>();
-    qf.forEach(m => {
+    qf.forEach((m) => {
       const winner = getMatchWinner(m.match.id, m.team1, m.team2);
       qfWinners.set(m.match.matchNumber, winner);
     });
@@ -528,13 +742,13 @@ export default function BracketFormPage() {
     };
 
     const sf = allMatches
-      .filter(m => m.stage === 'SF')
+      .filter((m) => m.stage === 'SF')
       .sort((a, b) => a.matchNumber - b.matchNumber)
-      .map(match => {
+      .map((match) => {
         const sources = sfMapping[match.matchNumber];
         const team1 = sources ? qfWinners.get(sources[0]) : match.team1;
         const team2 = sources ? qfWinners.get(sources[1]) : match.team2;
-        
+
         return {
           match,
           prediction: matchPredictions.get(match.id),
@@ -546,22 +760,25 @@ export default function BracketFormPage() {
     // Build SF winners and losers for final and 3rd place
     const sfWinners = new Map<number, Team | null>();
     const sfLosers = new Map<number, Team | null>();
-    sf.forEach(m => {
+    sf.forEach((m) => {
       const winner = getMatchWinner(m.match.id, m.team1, m.team2);
       sfWinners.set(m.match.matchNumber, winner);
       // Loser is the other team
       if (winner) {
-        sfLosers.set(m.match.matchNumber, winner.id === m.team1?.id ? (m.team2 || null) : (m.team1 || null));
+        sfLosers.set(
+          m.match.matchNumber,
+          winner.id === m.team1?.id ? m.team2 || null : m.team1 || null
+        );
       }
     });
 
     // Final - match 104
-    const final = allMatches.find(m => m.stage === 'F');
+    const final = allMatches.find((m) => m.stage === 'F');
     const finalTeam1 = sfWinners.get(101);
     const finalTeam2 = sfWinners.get(102);
-    
+
     // Third place match - match 103
-    const thirdMatch = allMatches.find(m => m.matchNumber === 103);
+    const thirdMatch = allMatches.find((m) => m.matchNumber === 103);
     const thirdTeam1 = sfLosers.get(101);
     const thirdTeam2 = sfLosers.get(102);
 
@@ -570,58 +787,76 @@ export default function BracketFormPage() {
       r16,
       qf,
       sf,
-      third: thirdMatch ? {
-        match: thirdMatch,
-        prediction: matchPredictions.get(thirdMatch.id),
-        team1: thirdTeam1 || thirdMatch.team1,
-        team2: thirdTeam2 || thirdMatch.team2,
-      } : null,
-      final: final ? {
-        match: final,
-        prediction: matchPredictions.get(final.id),
-        team1: finalTeam1 || final.team1,
-        team2: finalTeam2 || final.team2,
-      } : null,
+      third: thirdMatch
+        ? {
+            match: thirdMatch,
+            prediction: matchPredictions.get(thirdMatch.id),
+            team1: thirdTeam1 || thirdMatch.team1,
+            team2: thirdTeam2 || thirdMatch.team2,
+          }
+        : null,
+      final: final
+        ? {
+            match: final,
+            prediction: matchPredictions.get(final.id),
+            team1: finalTeam1 || final.team1,
+            team2: finalTeam2 || final.team2,
+          }
+        : null,
     };
   }, [allMatches, matchPredictions, getTeamByCode, getMatchWinner]);
 
   // Handle prediction changes
-  const handlePredictionChange = useCallback((matchId: string, scoreA: number, scoreB: number) => {
-    setMatchPredictions(prev => {
-      const newMap = new Map(prev);
-      newMap.set(matchId, { matchId, predScoreA: scoreA, predScoreB: scoreB });
-      return newMap;
-    });
-    setIsDirty(true);
-  }, []);
+  const handlePredictionChange = useCallback(
+    (matchId: string, scoreA: number, scoreB: number) => {
+      setMatchPredictions((prev) => {
+        const newMap = new Map(prev);
+        newMap.set(matchId, {
+          matchId,
+          predScoreA: scoreA,
+          predScoreB: scoreB,
+        });
+        return newMap;
+      });
+      setIsDirty(true);
+    },
+    []
+  );
 
   // Fill group stage with random results
   const fillRandomGroupStage = useCallback(() => {
     if (!allMatches) return;
-    
-    const groupMatches = allMatches.filter(m => m.stage === 'GROUP');
+
+    const groupMatches = allMatches.filter((m) => m.stage === 'GROUP');
     const newPredictions = new Map(matchPredictions);
-    
-    groupMatches.forEach(match => {
+
+    groupMatches.forEach((match) => {
       // Generate random scores (0-4 range is realistic for football)
       const scoreA = Math.floor(Math.random() * 5);
       const scoreB = Math.floor(Math.random() * 5);
-      newPredictions.set(match.id, { matchId: match.id, predScoreA: scoreA, predScoreB: scoreB });
+      newPredictions.set(match.id, {
+        matchId: match.id,
+        predScoreA: scoreA,
+        predScoreB: scoreB,
+      });
     });
-    
+
     setMatchPredictions(newPredictions);
     setIsDirty(true);
   }, [allMatches, matchPredictions]);
 
   // Handle winner selection (for tied knockout matches)
-  const handleWinnerSelect = useCallback((matchId: string, winnerId: string) => {
-    setWinnerSelections(prev => {
-      const newMap = new Map(prev);
-      newMap.set(matchId, winnerId);
-      return newMap;
-    });
-    setIsDirty(true);
-  }, []);
+  const handleWinnerSelect = useCallback(
+    (matchId: string, winnerId: string) => {
+      setWinnerSelections((prev) => {
+        const newMap = new Map(prev);
+        newMap.set(matchId, winnerId);
+        return newMap;
+      });
+      setIsDirty(true);
+    },
+    []
+  );
 
   // Handle top scorer change
   const handleTopScorerChange = useCallback((playerName: string) => {
@@ -648,35 +883,85 @@ export default function BracketFormPage() {
           setIsSaving(false);
           return;
         }
-        
+
         // Create form via API
         await http.post('/forms', { nickname: nickname.trim() }, token);
-        
+
         // Refresh form data
         await mutateForm();
-        
-        setMessage({ type: 'success', text: '✅ הטופס נוצר בהצלחה! שומר ניבויים...' });
-        
+
+        setMessage({
+          type: 'success',
+          text: '✅ הטופס נוצר בהצלחה! שומר ניבויים...',
+        });
+
         // Wait a moment for form to be created, then save predictions
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise((resolve) => setTimeout(resolve, 500));
       }
 
+      // Get formId (should exist after creation)
+      let currentFormId = formData?.id;
+      if (!currentFormId) {
+        // Refresh form data to get the newly created form ID
+        await mutateForm();
+        const token = await getToken();
+        if (!token) {
+          setMessage({ type: 'error', text: 'אנא התחבר מחדש' });
+          setIsSaving(false);
+          return;
+        }
+        const updatedForm = await http.get('/forms/me', token);
+        if (!updatedForm?.id) {
+          setMessage({ type: 'error', text: '❌ שגיאה: לא נמצא טופס' });
+          setIsSaving(false);
+          return;
+        }
+        currentFormId = updatedForm.id;
+      }
+
+      // Prepare picks to save
       const predictions = Array.from(matchPredictions.values());
+      const picksToSave: {
+        matchPicks?: Array<{
+          matchId: string;
+          predScoreA: number;
+          predScoreB: number;
+          predOutcome: 'W' | 'D' | 'L';
+        }>;
+        topScorerPicks?: Array<{ playerName: string }>;
+      } = {};
+
       if (predictions.length > 0) {
-        await api.saveMatchPredictions(predictions);
+        picksToSave.matchPicks = predictions.map((p) => ({
+          matchId: p.matchId,
+          predScoreA: p.predScoreA,
+          predScoreB: p.predScoreB,
+          predOutcome:
+            p.predScoreA > p.predScoreB
+              ? 'W'
+              : p.predScoreA < p.predScoreB
+              ? 'L'
+              : 'D',
+        }));
       }
-      
-      // Save top scorer if provided
+
       if (topScorer.trim()) {
-        await api.saveTopScorer(topScorer.trim());
+        picksToSave.topScorerPicks = [{ playerName: topScorer.trim() }];
       }
-      
+
+      // Save all picks at once
+      if ((picksToSave.matchPicks || picksToSave.topScorerPicks) && currentFormId) {
+        await api.savePicks(currentFormId, picksToSave);
+      }
+
       setIsDirty(false);
       setMessage({ type: 'success', text: '✅ הניבויים נשמרו בהצלחה!' });
     } catch (error) {
       setMessage({
         type: 'error',
-        text: `❌ שגיאה בשמירה: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        text: `❌ שגיאה בשמירה: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`,
       });
     } finally {
       setIsSaving(false);
@@ -702,7 +987,9 @@ export default function BracketFormPage() {
         <Header />
         <main className="container mx-auto px-4 py-8">
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
-            <p className="text-red-600">שגיאה בטעינת הנתונים. אנא נסה שוב מאוחר יותר.</p>
+            <p className="text-red-600">
+              שגיאה בטעינת הנתונים. אנא נסה שוב מאוחר יותר.
+            </p>
           </div>
         </main>
       </div>
@@ -712,7 +999,10 @@ export default function BracketFormPage() {
   const isLocked = formData?.isFinal ?? false;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50/30 to-slate-100" dir="rtl">
+    <div
+      className="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50/30 to-slate-100"
+      dir="rtl"
+    >
       <Header />
 
       <main className="container mx-auto px-4 py-6 max-w-[1600px]">
@@ -826,11 +1116,13 @@ export default function BracketFormPage() {
 
           {/* Message Banner */}
           {message && (
-            <div className={`mt-4 p-3 rounded-lg text-sm ${
-              message.type === 'success' 
-                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
-                : 'bg-red-50 text-red-700 border border-red-200'
-            }`}>
+            <div
+              className={`mt-4 p-3 rounded-lg text-sm ${
+                message.type === 'success'
+                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                  : 'bg-red-50 text-red-700 border border-red-200'
+              }`}
+            >
               {message.text}
             </div>
           )}
@@ -859,7 +1151,7 @@ export default function BracketFormPage() {
               (הקבוצות יתעדכנו לפי הניבויים שלך בשלב הבתים)
             </span>
           </h2>
-          
+
           <KnockoutBracket
             r32Matches={knockoutMatches.r32}
             r16Matches={knockoutMatches.r16}
@@ -903,4 +1195,3 @@ export default function BracketFormPage() {
     </div>
   );
 }
-

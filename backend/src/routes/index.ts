@@ -5,7 +5,6 @@ import formRoutes from './forms';
 import adminRoutes from './admin';
 import matchRoutes from './matches';
 import standingsRoutes from './standings';
-import predictionsRoutes from './predictions';
 import simulateRoutes from './simulate';
 
 const router = Router();
@@ -15,7 +14,6 @@ router.use('/', healthRoutes);
 router.use('/leagues', leagueRoutes);
 router.use('/matches', matchRoutes);
 router.use('/standings', standingsRoutes);
-router.use('/predictions', predictionsRoutes);
 router.use('/forms', formRoutes);
 router.use('/admin', adminRoutes);
 router.use('/simulate', simulateRoutes);

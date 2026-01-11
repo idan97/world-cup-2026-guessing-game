@@ -46,29 +46,40 @@ export function useApi() {
     [getToken]
   );
 
-  // Predictions API
+  // Predictions API (now using Forms API)
   const saveMatchPredictions = useCallback(
-    async (predictions: Array<{ matchId: string; predScoreA: number; predScoreB: number }>) => {
-      const token = await getToken();
-      return http.post('/predictions/matches', { predictions }, token || '');
+    async (formId: string, predictions: Array<{ matchId: string; predScoreA: number; predScoreB: number }>) => {
+      const api = await getAuthenticatedApi();
+      return api.savePicks(formId, {
+        matchPicks: predictions.map(p => ({
+          matchId: p.matchId,
+          predScoreA: p.predScoreA,
+          predScoreB: p.predScoreB,
+          predOutcome: p.predScoreA > p.predScoreB ? 'W' : p.predScoreA < p.predScoreB ? 'L' : 'D',
+        })),
+      });
     },
-    [getToken]
+    [getAuthenticatedApi]
   );
 
   const saveAdvancePredictions = useCallback(
-    async (predictions: Array<{ stage: 'R32' | 'R16' | 'QF' | 'SF' | 'F'; teamId: string }>) => {
-      const token = await getToken();
-      return http.post('/predictions/advances', { predictions }, token || '');
+    async (formId: string, predictions: Array<{ stage: 'R32' | 'R16' | 'QF' | 'SF' | 'F'; teamId: string }>) => {
+      const api = await getAuthenticatedApi();
+      return api.savePicks(formId, {
+        advancePicks: predictions,
+      });
     },
-    [getToken]
+    [getAuthenticatedApi]
   );
 
   const saveTopScorer = useCallback(
-    async (playerName: string) => {
-      const token = await getToken();
-      return http.post('/predictions/top-scorer', { playerName }, token || '');
+    async (formId: string, playerName: string) => {
+      const api = await getAuthenticatedApi();
+      return api.savePicks(formId, {
+        topScorerPicks: [{ playerName }],
+      });
     },
-    [getToken]
+    [getAuthenticatedApi]
   );
 
   return {

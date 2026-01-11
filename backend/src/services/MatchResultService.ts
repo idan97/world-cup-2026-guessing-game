@@ -5,9 +5,8 @@
  * third place rankings, and knockout stage team assignments.
  */
 
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import prisma from '../db';
+import logger from '../logger';
 
 interface MatchResult {
   matchId: string;
@@ -65,8 +64,14 @@ export async function updateMatchResult(result: MatchResult): Promise<void> {
     },
   });
 
-  console.log(
-    `✅ Match ${match.matchNumber} result updated: ${team1Score}-${team2Score}`,
+  logger.info(
+    {
+      matchNumber: match.matchNumber,
+      matchId,
+      team1Score,
+      team2Score,
+    },
+    'Match result updated',
   );
 
   // If it's a group stage match, update group standings
@@ -81,7 +86,7 @@ export async function updateMatchResult(result: MatchResult): Promise<void> {
     // Check if group stage is complete
     const isGroupStageComplete = await checkGroupStageComplete();
     if (isGroupStageComplete) {
-      console.log('🎊 Group stage complete! Updating third place rankings...');
+      logger.info('Group stage complete, updating third place rankings');
       await updateThirdPlaceRankings();
       await assignR32ThirdPlaceTeams();
     }
@@ -186,7 +191,10 @@ async function updateGroupStandingsFromMatch(
     }),
   ]);
 
-  console.log(`📊 Updated standings for Group ${team1.groupLetter}`);
+  logger.info(
+    { groupLetter: team1.groupLetter },
+    'Updated group standings',
+  );
 
   // Re-sort the group
   await sortGroupStandings(team1.groupLetter);
@@ -248,7 +256,7 @@ async function sortGroupStandings(groupLetter: string): Promise<void> {
     }
   });
 
-  console.log(`🔄 Sorted Group ${groupLetter} standings`);
+  logger.info({ groupLetter }, 'Sorted group standings');
 }
 
 /**
@@ -307,7 +315,7 @@ async function updateThirdPlaceRankings(): Promise<void> {
     });
   }
 
-  console.log(`🥉 Updated third place rankings (top 8 teams advance)`);
+  logger.info('Updated third place rankings (top 8 teams advance)');
 }
 
 /**
@@ -371,8 +379,9 @@ async function assignR32ThirdPlaceTeams(): Promise<void> {
         where: { matchNumber },
         data: updateData,
       });
-      console.log(
-        `🎯 Assigned Group ${groupLetter} 3rd place to Match ${matchNumber}`,
+      logger.info(
+        { groupLetter, matchNumber },
+        'Assigned third place team to R32 match',
       );
     }
   }
@@ -409,7 +418,10 @@ async function assignWinnerToNextMatch(
       data: updateData,
     });
 
-    console.log(`🎯 Assigned winner to Match ${nextMatch.matchNumber}`);
+    logger.info(
+      { matchNumber: nextMatch.matchNumber, winnerId },
+      'Assigned winner to next round match',
+    );
   }
 }
 
