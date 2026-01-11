@@ -38,15 +38,20 @@ export const syncUser = async (
     }
 
     // Get user data from Clerk (email can be in different places depending on Clerk config)
+    interface ClerkClaims {
+      email?: string;
+      email_address?: string;
+      primary_email_address?: string;
+      name?: string;
+      full_name?: string;
+    }
+    const claims = sessionClaims as ClerkClaims;
     const email =
-      (sessionClaims as any).email ||
-      (sessionClaims as any).email_address ||
-      (sessionClaims as any).primary_email_address ||
+      claims.email ||
+      claims.email_address ||
+      claims.primary_email_address ||
       `${userId}@clerk.local`; // Fallback for users without email
-    const name =
-      (sessionClaims as any).name ||
-      (sessionClaims as any).full_name ||
-      'Unknown User';
+    const name = claims.name || claims.full_name || 'Unknown User';
 
     // Sync user from Clerk
     const { isNewUser } = await syncUserFromClerk(

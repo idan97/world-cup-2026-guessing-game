@@ -77,7 +77,7 @@ export class SimulationController extends BaseController {
         leaderboard,
         simulatedResultsCount: simulatedResults.length,
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.error(
         {
           error,
@@ -88,11 +88,13 @@ export class SimulationController extends BaseController {
       );
 
       // טיפול בשגיאות ספציפיות
-      if (error.message?.includes('not found')) {
-        return this.notFound(res, error.message);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('not found')) {
+        return this.notFound(res, errorMessage);
       }
-      if (error.message?.includes('Invalid')) {
-        return this.badRequest(res, error.message);
+      if (errorMessage.includes('Invalid')) {
+        return this.badRequest(res, errorMessage);
       }
 
       return this.internalError(res, error);
@@ -159,7 +161,7 @@ export class SimulationController extends BaseController {
         leaderboard,
         simulatedResultsCount: simulatedResults.length,
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.error(
         {
           error,
@@ -169,11 +171,13 @@ export class SimulationController extends BaseController {
         'Error calculating league simulation'
       );
 
-      if (error.message?.includes('not found')) {
-        return this.notFound(res, error.message);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('not found')) {
+        return this.notFound(res, errorMessage);
       }
-      if (error.message?.includes('Invalid')) {
-        return this.badRequest(res, error.message);
+      if (errorMessage.includes('Invalid')) {
+        return this.badRequest(res, errorMessage);
       }
 
       return this.internalError(res, error);
@@ -213,7 +217,7 @@ export class SimulationController extends BaseController {
       );
 
       return this.success(res, result);
-    } catch (error: any) {
+    } catch (error) {
       logger.error(
         {
           error,
@@ -223,8 +227,10 @@ export class SimulationController extends BaseController {
         'Error fetching league predictions'
       );
 
-      if (error.message?.includes('not found')) {
-        return this.notFound(res, error.message);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('not found')) {
+        return this.notFound(res, errorMessage);
       }
 
       return this.internalError(res, error);
@@ -270,7 +276,7 @@ export class SimulationController extends BaseController {
       );
 
       return this.success(res, { simulation });
-    } catch (error: any) {
+    } catch (error) {
       logger.error(
         {
           error,
@@ -350,7 +356,7 @@ export class SimulationController extends BaseController {
       );
 
       return this.success(res, { simulation });
-    } catch (error: any) {
+    } catch (error) {
       logger.error(
         {
           error,

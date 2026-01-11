@@ -263,7 +263,12 @@ async function calculateSimulatedScore(
  * חישוב ניקוד למשחק בודד על בסיס תוצאה מדומה
  */
 function calculateMatchScoreFromSimulation(
-  pick: any,
+  pick: {
+    match: { stage: Stage };
+    predOutcome: Outcome;
+    predScoreA: number;
+    predScoreB: number;
+  },
   simulatedResult: SimulatedMatchResult
 ): number {
   const match = pick.match;

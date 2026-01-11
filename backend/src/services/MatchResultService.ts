@@ -340,7 +340,7 @@ async function assignR32ThirdPlaceTeams(): Promise<void> {
     if (!match) continue;
 
     // Check if team1Code or team2Code contains '3-'
-    let updateData: any = {};
+    const updateData: { team1Id?: string; team2Id?: string } = {};
     if (match.team1Code.startsWith('3-')) {
       updateData.team1Id = thirdPlaceTeam.teamId;
     }
@@ -377,7 +377,7 @@ async function assignWinnerToNextMatch(
   });
 
   for (const nextMatch of nextMatches) {
-    const updateData: any = {};
+    const updateData: { team1Id?: string; team2Id?: string } = {};
 
     if (nextMatch.team1Code === winnerCode) {
       updateData.team1Id = winnerId;

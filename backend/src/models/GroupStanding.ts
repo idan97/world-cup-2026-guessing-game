@@ -1,13 +1,24 @@
 import prisma from '../db';
-import type { GroupStanding } from '@prisma/client';
+import type { GroupStanding, Prisma } from '@prisma/client';
+
+type GroupStandingWithTeam = Prisma.GroupStandingGetPayload<{
+  include: { team: true };
+}>;
 
 export class GroupStandingModel {
   /**
    * Get all group standings, optionally filtered by group letters
    * @param groupLetters - Array of group letters (e.g., ['A', 'B']) or undefined for all
    */
-  static async findByGroups(groupLetters?: string[]): Promise<GroupStanding[]> {
-    const query: any = {
+  static async findByGroups(
+    groupLetters?: string[]
+  ): Promise<GroupStandingWithTeam[]> {
+    const where: Prisma.GroupStandingWhereInput = groupLetters
+      ? { groupLetter: { in: groupLetters } }
+      : {};
+
+    return await prisma.groupStanding.findMany({
+      where,
       include: {
         team: true,
       },
@@ -17,17 +28,7 @@ export class GroupStandingModel {
         { goalDiff: 'desc' },
         { goalsFor: 'desc' },
       ],
-    };
-
-    if (groupLetters) {
-      query.where = {
-        groupLetter: {
-          in: groupLetters,
-        },
-      };
-    }
-
-    return await prisma.groupStanding.findMany(query);
+    });
   }
 
   /**
@@ -78,7 +79,9 @@ export class GroupStandingModel {
   /**
    * Get third place rankings (for R32 qualification)
    */
-  static async getThirdPlaceRankings() {
+  static async getThirdPlaceRankings(): Promise<
+    Prisma.ThirdPlaceRankingGetPayload<{ include: { team: true } }>[]
+  > {
     return await prisma.thirdPlaceRanking.findMany({
       where: {
         rank: {

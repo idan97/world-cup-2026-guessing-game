@@ -1,4 +1,5 @@
 import prisma from '../db';
+import type { TournamentSettings } from '@prisma/client';
 
 /**
  * שירות לניהול הגדרות המונדיאל
@@ -9,7 +10,7 @@ export class TournamentSettingsService {
   /**
    * מחזיר את ההגדרות הנוכחיות של המונדיאל
    */
-  static async getSettings() {
+  static async getSettings(): Promise<TournamentSettings> {
     let settings = await prisma.tournamentSettings.findUnique({
       where: { id: this.SETTINGS_ID },
     });

@@ -2,7 +2,7 @@ import { Response } from 'express';
 import logger from '../logger';
 
 export abstract class BaseController {
-  protected success(res: Response, data?: any, message?: string): Response {
+  protected success(res: Response, data?: unknown, message?: string): Response {
     return res.status(200).json({
       success: true,
       message: message || 'Success',
@@ -10,7 +10,7 @@ export abstract class BaseController {
     });
   }
 
-  protected created(res: Response, data?: any, message?: string): Response {
+  protected created(res: Response, data?: unknown, message?: string): Response {
     return res.status(201).json({
       success: true,
       message: message || 'Created successfully',
@@ -21,7 +21,7 @@ export abstract class BaseController {
   protected badRequest(
     res: Response,
     message?: string,
-    errors?: any
+    errors?: unknown
   ): Response {
     return res.status(400).json({
       success: false,
@@ -60,7 +60,7 @@ export abstract class BaseController {
 
   protected internalError(
     res: Response,
-    error?: any,
+    error?: unknown,
     message?: string
   ): Response {
     logger.error({ error }, 'Internal server error');

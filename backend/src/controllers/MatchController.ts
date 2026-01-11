@@ -64,7 +64,12 @@ export class MatchController extends BaseController {
       }
 
       // Fetch matches with filters
-      const filters: any = {};
+      const filters: {
+        stage?: Stage;
+        groupLetter?: string;
+        upcoming?: boolean;
+        limit?: number;
+      } = {};
       if (stage) filters.stage = stage;
       if (groupLetter) filters.groupLetter = groupLetter.toUpperCase();
       if (upcoming) filters.upcoming = upcoming;

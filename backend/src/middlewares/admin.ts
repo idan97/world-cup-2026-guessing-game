@@ -28,7 +28,7 @@ export const requireAdmin = async (
     }
 
     next();
-  } catch (error) {
+  } catch {
     res.status(500).json({
       success: false,
       message: 'Error checking admin status',

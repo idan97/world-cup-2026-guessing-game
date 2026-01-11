@@ -64,7 +64,8 @@ export class StandingsController extends BaseController {
       const standings = await GroupStandingModel.findByGroups(groupLetters);
 
       // Group by letter for response
-      const grouped: Record<string, any[]> = {};
+      type StandingType = (typeof standings)[number];
+      const grouped: Record<string, StandingType[]> = {};
       for (const standing of standings) {
         if (!grouped[standing.groupLetter]) {
           grouped[standing.groupLetter] = [];

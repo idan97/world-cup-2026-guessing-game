@@ -199,13 +199,13 @@ export class AdminController extends BaseController {
         return this.badRequest(res, 'Invalid match data', result.error.errors);
       }
 
-      const updateData: any = { ...result.data };
-      if (
-        updateData.scheduledAt &&
-        typeof updateData.scheduledAt === 'string'
-      ) {
-        updateData.scheduledAt = new Date(updateData.scheduledAt);
-      }
+      const updateData = {
+        ...result.data,
+        scheduledAt:
+          result.data.scheduledAt && typeof result.data.scheduledAt === 'string'
+            ? new Date(result.data.scheduledAt)
+            : result.data.scheduledAt,
+      };
 
       const match = await MatchModel.update(matchId, updateData);
 
@@ -282,18 +282,20 @@ export class AdminController extends BaseController {
         updatedMatch,
         'Match result recorded successfully'
       );
-    } catch (error: any) {
+    } catch (error) {
       logger.error(
         { error, matchNumber: req.params['id'], userId: req.auth.userId },
         'Error recording match result'
       );
 
-      if (error.message?.includes('not found')) {
-        return this.notFound(res, error.message);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('not found')) {
+        return this.notFound(res, errorMessage);
       }
 
-      if (error.message?.includes('already finished')) {
-        return this.badRequest(res, error.message);
+      if (errorMessage.includes('already finished')) {
+        return this.badRequest(res, errorMessage);
       }
 
       return this.internalError(res, error);

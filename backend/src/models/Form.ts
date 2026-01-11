@@ -44,7 +44,14 @@ export class FormModel {
   }
 
   // Get form with full details including picks
-  static async getFormWithPicks(id: string): Promise<any> {
+  static async getFormWithPicks(id: string): Promise<
+    | (Form & {
+        matchPicks: MatchPick[];
+        advancePicks: AdvancePick[];
+        topScorerPicks: { formId: string; playerName: string }[];
+      })
+    | null
+  > {
     return await prisma.form.findUnique({
       where: { id },
       include: {
@@ -115,7 +122,14 @@ export class FormModel {
   }
 
   // Combined method to save all picks atomically
-  static async savePicks(formId: string, picks: any): Promise<void> {
+  static async savePicks(
+    formId: string,
+    picks: {
+      matchPicks?: MatchPick[];
+      advancePicks?: AdvancePick[];
+      topScorerPicks?: Array<{ playerName: string }>;
+    }
+  ): Promise<void> {
     await prisma.$transaction(async (tx) => {
       // Save match picks
       if (picks.matchPicks) {

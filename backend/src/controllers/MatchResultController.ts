@@ -60,18 +60,20 @@ export class MatchResultController extends BaseController {
         team1Score,
         team2Score,
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.error(
         { error, matchId: req.params['matchId'], userId: req.auth?.userId },
         'Error updating match result'
       );
 
-      if (error.message?.includes('not found')) {
-        return this.notFound(res, error.message);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('not found')) {
+        return this.notFound(res, errorMessage);
       }
 
-      if (error.message?.includes('already finished')) {
-        return this.badRequest(res, error.message);
+      if (errorMessage.includes('already finished')) {
+        return this.badRequest(res, errorMessage);
       }
 
       return this.internalError(res, error);
