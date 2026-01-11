@@ -35,7 +35,7 @@ export class LeagueController extends BaseController {
     res: Response,
   ): Promise<Response> => {
     try {
-      const userId = req.auth.userId;
+      const userId = req.auth.userId!;
       const membershipData = await LeagueModel.getUserLeagues(userId);
 
       // Transform data to include role and member count
@@ -66,7 +66,7 @@ export class LeagueController extends BaseController {
         return this.badRequest(res, 'Invalid league data', result.error.errors);
       }
 
-      const userId = req.auth.userId;
+      const userId = req.auth.userId!;
       const joinCode = LeagueModel.generateJoinCode();
 
       // Create league
@@ -100,7 +100,7 @@ export class LeagueController extends BaseController {
         return this.badRequest(res, 'Invalid join code');
       }
 
-      const userId = req.auth.userId;
+      const userId = req.auth.userId!;
 
       // Find league by join code
       const league = await LeagueModel.findByJoinCode(code.toUpperCase());
@@ -156,7 +156,7 @@ export class LeagueController extends BaseController {
   ): Promise<Response> => {
     try {
       const leagueId = req.league!.id;
-      const userId = req.auth.userId;
+      const userId = req.auth.userId!;
 
       const result = createMessageSchema.safeParse(req.body);
       if (!result.success) {
@@ -285,7 +285,7 @@ export class LeagueController extends BaseController {
   ): Promise<Response> => {
     try {
       const leagueId = req.league!.id;
-      const userId = req.auth.userId;
+      const userId = req.auth.userId!;
 
       const result = addAllowEmailSchema.safeParse(req.body);
       if (!result.success) {

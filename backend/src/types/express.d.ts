@@ -1,10 +1,10 @@
-import type { Auth } from '@clerk/express';
+import type { AuthObject } from '@clerk/backend';
 import type { LeagueMember, Form } from '../types';
 
 declare global {
   namespace Express {
     interface Request {
-      auth: Auth;
+      auth: AuthObject;
       league?: {
         id: string;
         membership?: LeagueMember;

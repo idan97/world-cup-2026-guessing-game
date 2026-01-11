@@ -57,7 +57,7 @@ export class FormController extends BaseController {
   // GET /forms/me - Get user's form
   public getMyForm = async (req: Request, res: Response): Promise<Response> => {
     try {
-      const userId = req.auth.userId;
+      const userId = req.auth.userId!; // Non-null after requireAuth middleware
       const form = await FormModel.findByOwnerId(userId);
 
       if (!form) {
@@ -122,7 +122,7 @@ export class FormController extends BaseController {
         return this.badRequest(res, 'Invalid form data', result.error.errors);
       }
 
-      const userId = req.auth.userId;
+      const userId = req.auth.userId!;
 
       // Check if user already has a form
       const hasForm = await FormModel.userHasForm(userId);

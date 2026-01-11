@@ -32,7 +32,7 @@ export const requireLeagueMembership = async (
 ): Promise<void> => {
   try {
     const leagueId = req.league!.id;
-    const userId = req.auth.userId;
+    const userId = req.auth.userId!;
 
     const membership = await LeagueModel.getUserMembership(leagueId, userId);
 
@@ -66,7 +66,7 @@ export const requireLeagueAdmin = async (
 ): Promise<void> => {
   try {
     const leagueId = req.league!.id;
-    const userId = req.auth.userId;
+    const userId = req.auth.userId!;
 
     const membership = await LeagueModel.getUserMembership(leagueId, userId);
 

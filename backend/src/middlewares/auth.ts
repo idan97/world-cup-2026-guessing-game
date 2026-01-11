@@ -1,5 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
 
+// Type guard to ensure userId exists after requireAuth
+export interface AuthenticatedRequest extends Request {
+  auth: Request['auth'] & {
+    userId: string; // Non-null after requireAuth
+  };
+}
+
 export const requireAuth = async (
   req: Request,
   res: Response,
