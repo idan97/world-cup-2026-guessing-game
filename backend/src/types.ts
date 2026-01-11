@@ -95,12 +95,6 @@ export interface MatchPick {
   predOutcome: Outcome;
 }
 
-export interface AdvancePick {
-  formId: string;
-  stage: Exclude<Stage, 'GROUP'>;
-  teamId: string;
-}
-
 export interface TopScorerPick {
   formId: string;
   playerName: string;

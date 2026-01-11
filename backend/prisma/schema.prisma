@@ -54,7 +54,6 @@ model Team {
   wonMatches         Match[]            @relation("WonMatches")
   groupStandings     GroupStanding[]
   thirdPlaceRankings ThirdPlaceRanking[]
-  advancePicks       AdvancePick[]
 
   @@index([fifaCode])
   @@index([groupLetter])
@@ -253,7 +252,6 @@ model Form {
   // Relations
   owner           User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   matchPicks      MatchPick[]
-  advancePicks    AdvancePick[]
   topScorerPicks  TopScorerPick[]
   scoringRuns     ScoringRun[]
 
@@ -274,20 +272,6 @@ model MatchPick {
   @@id([formId, matchId])
   @@index([matchId])
   @@map("match_picks")
-}
-
-model AdvancePick {
-  formId String
-  stage  Stage
-  teamId String
-
-  // Relations
-  form Form @relation(fields: [formId], references: [id], onDelete: Cascade)
-  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
-
-  @@id([formId, stage, teamId])
-  @@index([stage, teamId])
-  @@map("advance_picks")
 }
 
 model TopScorerPick {

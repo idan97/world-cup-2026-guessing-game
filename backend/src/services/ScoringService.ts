@@ -99,52 +99,17 @@ export function calculateMatchScore(match: Match, pick: MatchPick): number {
 
 /**
  * מחשב ניקוד על העלאת קבוצות לשלב הבא
- * @param formId מזהה הטופס
- * @param stage השלב שבודקים בו (R32, R16, QF, SF, F)
+ * @param _formId מזהה הטופס
+ * @param _stage השלב שבודקים בו (R32, R16, QF, SF, F)
  * @returns מספר הנקודות שהמשתמש זכה על העלאות נכונות
  */
 export async function calculateAdvanceScore(
-  formId: string,
-  stage: Exclude<Stage, 'GROUP'>,
+  _formId: string,
+  _stage: Exclude<Stage, 'GROUP'>,
 ): Promise<number> {
-  // מביאים את הניחושים של המשתמש לשלב זה
-  const userAdvancePicks = await prisma.advancePick.findMany({
-    where: { formId, stage },
-  });
-
-  // מביאים את הקבוצות שבאמת עלו לשלב זה
-  // נניח שזה מיוצג ב-matches שבשלב זה, כאשר team1Id ו-team2Id מלאים
-  const stageMatches = await prisma.match.findMany({
-    where: { stage },
-  });
-
-  // אוסף את כל הקבוצות שמשחקות בשלב זה
-  const actualTeamsInStage = new Set<string>();
-  stageMatches.forEach((match) => {
-    if (match.team1Id) {
-      actualTeamsInStage.add(match.team1Id);
-    }
-    if (match.team2Id) {
-      actualTeamsInStage.add(match.team2Id);
-    }
-  });
-
-  // ספירה של כמה קבוצות המשתמש ניחש נכון
-  let correctAdvances = 0;
-  userAdvancePicks.forEach((pick) => {
-    if (actualTeamsInStage.has(pick.teamId)) {
-      correctAdvances++;
-    }
-  });
-
-  // השלב הקודם קובע כמה נקודות מקבלים על עלייה
-  const previousStage = getPreviousStage(stage);
-  if (!previousStage) {
-    return 0;
-  }
-
-  const scoring = SCORING_MATRIX[previousStage];
-  return correctAdvances * scoring.advance;
+  // TODO: Update to derive advancement from MatchPick winners instead of AdvancePick
+  // Temporarily disabled until bracket calculation is implemented
+  return 0;
 }
 
 /**
@@ -256,7 +221,9 @@ export async function calculateTotalScore(
 
 /**
  * מחזיר את השלב הקודם (לצורך חישוב נקודות עלייה)
+ * TODO: Will be used again when advancement scoring is re-implemented
  */
+/*
 function getPreviousStage(stage: Stage): Stage | null {
   const stageOrder: Stage[] = ['GROUP', 'R32', 'R16', 'QF', 'SF', 'F'];
   const index = stageOrder.indexOf(stage);
@@ -266,6 +233,7 @@ function getPreviousStage(stage: Stage): Stage | null {
   const prevStage = stageOrder[index - 1];
   return prevStage ?? null;
 }
+*/
 
 /**
  * מחשב סטטיסטיקות לשוברי שוויון
@@ -316,16 +284,8 @@ export async function calculateTiebreakers(
   }
 
   // בדיקת אלופה
-  const finalMatch = await prisma.match.findFirst({
-    where: { stage: 'F' },
-  });
+  // TODO: Derive champion from final match winner prediction
   let correctChampion = false;
-  if (finalMatch?.winnerId) {
-    const championPick = await prisma.advancePick.findFirst({
-      where: { formId, stage: 'F', teamId: finalMatch.winnerId },
-    });
-    correctChampion = !!championPick;
-  }
 
   // בדיקת מלך השערים
   let correctTopScorer = false;
@@ -348,35 +308,7 @@ export async function calculateTiebreakers(
     R16: 0,
   };
 
-  const advanceStages: Exclude<Stage, 'GROUP'>[] = ['R16', 'QF', 'SF', 'F'];
-  for (const stage of advanceStages) {
-    const userPicks = await prisma.advancePick.findMany({
-      where: { formId, stage },
-    });
-
-    const stageMatches = await prisma.match.findMany({
-      where: { stage },
-    });
-
-    const actualTeams = new Set<string>();
-    stageMatches.forEach((m) => {
-      if (m.team1Id) {
-        actualTeams.add(m.team1Id);
-      }
-      if (m.team2Id) {
-        actualTeams.add(m.team2Id);
-      }
-    });
-
-    let count = 0;
-    userPicks.forEach((pick) => {
-      if (actualTeams.has(pick.teamId)) {
-        count++;
-      }
-    });
-
-    correctAdvances[stage] = count;
-  }
+  // TODO: Derive from match winners instead of AdvancePick
 
   return {
     exactResults,

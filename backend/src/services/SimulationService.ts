@@ -441,10 +441,8 @@ async function calculateSimulatedTiebreakers(
   if (finalMatch) {
     const finalResult = simulatedMatchMap.get(finalMatch.id);
     if (finalResult?.winnerId) {
-      const championPick = await prisma.advancePick.findFirst({
-        where: { formId, stage: 'F', teamId: finalResult.winnerId },
-      });
-      correctChampion = !!championPick;
+      // TODO: Derive champion from final match winner prediction
+      correctChampion = false;
     }
   }
 

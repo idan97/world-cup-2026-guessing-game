@@ -3,9 +3,8 @@ import { BaseController } from './BaseController';
 import { z } from 'zod';
 import { FormModel } from '../models/Form';
 import { MatchModel } from '../models/Match';
-import { Stage, Outcome } from '@prisma/client';
+import { Outcome } from '@prisma/client';
 import logger from '../logger';
-import prisma from '../db';
 
 // Validation schemas
 const matchPickSchema = z
@@ -35,13 +34,6 @@ const matchPickSchema = z
     },
   );
 
-const advancePickSchema = z.object({
-  stage: z.nativeEnum(Stage).refine((stage) => stage !== 'GROUP', {
-    message: 'Advance picks cannot be for GROUP stage',
-  }),
-  teamId: z.string().min(1),
-});
-
 const topScorerPickSchema = z.object({
   playerName: z.string().min(1).max(100),
 });
@@ -49,7 +41,6 @@ const topScorerPickSchema = z.object({
 const createFormSchema = z.object({
   nickname: z.string().min(1).max(100),
   matchPicks: z.array(matchPickSchema).optional(),
-  advancePicks: z.array(advancePickSchema).optional(),
   topScorerPicks: z.array(topScorerPickSchema).optional(),
 });
 
@@ -59,7 +50,6 @@ const updateFormSchema = z.object({
 
 const picksSchema = z.object({
   matchPicks: z.array(matchPickSchema).optional(),
-  advancePicks: z.array(advancePickSchema).optional(),
   topScorerPicks: z.array(topScorerPickSchema).optional(),
 });
 
@@ -144,17 +134,9 @@ export class FormController extends BaseController {
       const form = await FormModel.create(userId, result.data.nickname);
 
       // Save picks if provided
-      if (
-        result.data.matchPicks ||
-        result.data.advancePicks ||
-        result.data.topScorerPicks
-      ) {
+      if (result.data.matchPicks || result.data.topScorerPicks) {
         await FormModel.savePicks(form.id, {
           matchPicks: result.data.matchPicks?.map((pick) => ({
-            ...pick,
-            formId: form.id,
-          })),
-          advancePicks: result.data.advancePicks?.map((pick) => ({
             ...pick,
             formId: form.id,
           })),
@@ -218,7 +200,7 @@ export class FormController extends BaseController {
       if (!result.success) {
         return this.badRequest(res, 'Invalid picks data', result.error.errors);
       }
-      const { matchPicks, advancePicks, topScorerPicks } = result.data;
+      const { matchPicks, topScorerPicks } = result.data;
 
       // Validate that all matchIds exist
       if (matchPicks && matchPicks.length > 0) {
@@ -235,36 +217,11 @@ export class FormController extends BaseController {
         }
       }
 
-      // Validate that all teamIds exist
-      if (advancePicks && advancePicks.length > 0) {
-        const teamIds = [...new Set(advancePicks.map((p) => p.teamId))];
-        const teams = await prisma.team.findMany({
-          where: {
-            id: {
-              in: teamIds,
-            },
-          },
-        });
-
-        if (teams.length !== teamIds.length) {
-          const foundIds = teams.map((t) => t.id);
-          const missingIds = teamIds.filter((id) => !foundIds.includes(id));
-          return this.badRequest(
-            res,
-            `Invalid team IDs: ${missingIds.join(', ')}`,
-          );
-        }
-      }
-
       const formId = req.form!['id'];
 
       // Save picks to database
       await FormModel.savePicks(formId, {
         matchPicks: matchPicks?.map((pick) => ({
-          ...pick,
-          formId,
-        })),
-        advancePicks: advancePicks?.map((pick) => ({
           ...pick,
           formId,
         })),
@@ -279,9 +236,8 @@ export class FormController extends BaseController {
           formId,
           userId: req.auth.userId,
           picksCount: {
-            matchPicks: result.data.matchPicks?.length || 0,
-            advancePicks: result.data.advancePicks?.length || 0,
-            topScorerPicks: result.data.topScorerPicks?.length || 0,
+            matchPicks: matchPicks?.length || 0,
+            topScorerPicks: topScorerPicks?.length || 0,
           },
         },
         'Form picks updated',
@@ -309,6 +265,15 @@ export class FormController extends BaseController {
       // Check if form is already submitted
       if (form.isFinal) {
         return this.conflict(res, 'Form is already submitted');
+      }
+
+      // Validate that all 104 matches have predictions
+      const matchPicksCount = await MatchModel.countMatchPicks(formId);
+      if (matchPicksCount !== 104) {
+        return this.badRequest(
+          res,
+          `Must predict all 104 matches before submitting. Currently have ${matchPicksCount} predictions.`,
+        );
       }
 
       // Mark form as submitted

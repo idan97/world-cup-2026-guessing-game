@@ -58,14 +58,9 @@
 | `POST`   | `/api/forms/:id/submit`     | ✅ Owner | Mark form as submitted/final                |
 | `DELETE` | `/api/forms/:id`            | ✅ Owner | Delete form                                 |
 
-### Predictions
+### ~~Predictions~~ (Removed - Merged into Forms)
 
-| Method | Path                          | Auth    | Description                         |
-| ------ | ----------------------------- | ------- | ----------------------------------- |
-| `GET`  | `/api/predictions/my`         | ✅ User | Get user's predictions              |
-| `POST` | `/api/predictions/matches`    | ✅ User | Create/update match predictions     |
-| `POST` | `/api/predictions/advances`   | ✅ User | Create/update advance predictions   |
-| `POST` | `/api/predictions/top-scorer` | ✅ User | Create/update top scorer prediction |
+**Note:** The `/api/predictions/*` endpoints have been removed. All prediction functionality is now handled through `/api/forms/:id/picks`.
 
 ### Simulation
 
@@ -137,17 +132,18 @@
 │       │                                                                    │
 │       ▼                                                                    │
 │  ┌─────────┐                                                               │
-│  │  Form   │──────────────────┬────────────────────┬─────────────────┐    │
-│  │  (1:1)  │                  │                    │                 │    │
-│  └─────────┘                  ▼                    ▼                 ▼    │
-│                         ┌───────────┐       ┌────────────┐    ┌─────────┐ │
-│                         │MatchPick  │───────│ AdvancePick│    │TopScorer│ │
-│                         │           │   ▲   │            │    │  Pick   │ │
-│                         └───────────┘   │   └────────────┘    └─────────┘ │
+│  │  Form   │──────────────────┬─────────────────────────────────────┐    │
+│  │  (1:1)  │                  │                                     │    │
+│  └─────────┘                  ▼                                     ▼    │
+│                         ┌───────────┐                         ┌─────────┐ │
+│                         │ MatchPick  │                         │TopScorer│ │
+│                         │  (0-104)  │   ▲                     │  Pick   │ │
+│                         └───────────┘   │                     └─────────┘ │
 │                               │         │                                  │
 │                               ▼         │                                  │
 │                           Match ────────┘                                  │
 │                                                                            │
+│  Note: AdvancePick removed - advancement derived from MatchPick winners   │
 │  ┌────────────┐                                                            │
 │  │ ScoringRun │◀──── Form (tracks point changes)                          │
 │  └────────────┘                                                            │

@@ -1,9 +1,9 @@
 import prisma from '../db';
 import type { Prisma } from '@prisma/client';
-import type { Form, MatchPick, AdvancePick } from '../types';
+import type { Form, MatchPick } from '../types';
 
 type FormWithPicks = Prisma.FormGetPayload<{
-  include: { matchPicks: true; advancePicks: true; topScorerPicks: true };
+  include: { matchPicks: true; topScorerPicks: true };
 }>;
 
 export class FormModel {
@@ -54,7 +54,6 @@ export class FormModel {
       where: { id },
       include: {
         matchPicks: true,
-        advancePicks: true,
         topScorerPicks: true,
       },
     });
@@ -89,24 +88,6 @@ export class FormModel {
     }
   }
 
-  // Save advance picks (upsert)
-  static async saveAdvancePicks(
-    formId: string,
-    advancePicks: AdvancePick[],
-  ): Promise<void> {
-    // Delete existing advance picks for this form
-    await prisma.advancePick.deleteMany({
-      where: { formId },
-    });
-
-    // Insert new advance picks
-    if (advancePicks.length > 0) {
-      await prisma.advancePick.createMany({
-        data: advancePicks,
-      });
-    }
-  }
-
   // Save top scorer pick (upsert)
   static async saveTopScorerPick(
     formId: string,
@@ -124,7 +105,6 @@ export class FormModel {
     formId: string,
     picks: {
       matchPicks?: MatchPick[] | undefined;
-      advancePicks?: AdvancePick[] | undefined;
       topScorerPicks?: Array<{ playerName: string }> | undefined;
     },
   ): Promise<void> {
@@ -137,18 +117,6 @@ export class FormModel {
         if (picks.matchPicks.length > 0) {
           await tx.matchPick.createMany({
             data: picks.matchPicks,
-          });
-        }
-      }
-
-      // Save advance picks
-      if (picks.advancePicks) {
-        await tx.advancePick.deleteMany({
-          where: { formId },
-        });
-        if (picks.advancePicks.length > 0) {
-          await tx.advancePick.createMany({
-            data: picks.advancePicks,
           });
         }
       }

@@ -15,6 +15,13 @@ interface MatchFilters {
 }
 
 export class MatchModel {
+  // Count match picks for a form
+  static async countMatchPicks(formId: string): Promise<number> {
+    return await prisma.matchPick.count({
+      where: { formId },
+    });
+  }
+
   // Get all matches with optional stage filter
   static async findAll(stage?: Stage): Promise<MatchWithRelations[]> {
     return await prisma.match.findMany({
