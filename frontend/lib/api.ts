@@ -1,6 +1,10 @@
 // Simple HTTP client that works with Clerk auth
 // For mutations (POST/PUT/DELETE), pass token from useAuth().getToken()
-const apiCall = async (url: string, options: RequestInit = {}, token?: string) => {
+const apiCall = async (
+  url: string,
+  options: RequestInit = {},
+  token?: string
+) => {
   const response = await fetch(`${process.env.NEXT_PUBLIC_API}${url}`, {
     credentials: 'include',
     headers: {
@@ -12,7 +16,7 @@ const apiCall = async (url: string, options: RequestInit = {}, token?: string) =
   });
 
   if (!response.ok) throw new Error(`API Error: ${response.status}`);
-  
+
   const json = await response.json();
   // API returns { success, message, data } - extract the data
   return json.data !== undefined ? json.data : json;
@@ -22,16 +26,25 @@ const apiCall = async (url: string, options: RequestInit = {}, token?: string) =
 export const http = {
   get: (url: string, token?: string) => apiCall(url, {}, token),
   post: (url: string, data?: unknown, token?: string) =>
-    apiCall(url, {
-      method: 'POST',
-      body: data ? JSON.stringify(data) : undefined,
-    }, token),
+    apiCall(
+      url,
+      {
+        method: 'POST',
+        body: data ? JSON.stringify(data) : undefined,
+      },
+      token
+    ),
   put: (url: string, data?: unknown, token?: string) =>
-    apiCall(url, {
-      method: 'PUT',
-      body: data ? JSON.stringify(data) : undefined,
-    }, token),
-  delete: (url: string, token?: string) => apiCall(url, { method: 'DELETE' }, token),
+    apiCall(
+      url,
+      {
+        method: 'PUT',
+        body: data ? JSON.stringify(data) : undefined,
+      },
+      token
+    ),
+  delete: (url: string, token?: string) =>
+    apiCall(url, { method: 'DELETE' }, token),
 };
 
 // SWR fetcher (just uses GET)
@@ -60,10 +73,14 @@ export const createAuthenticatedApi = (token: string) => ({
       topScorerPicks?: Array<{ playerName: string }>;
     }
   ) => {
-    const response = await http.post('/forms', {
-      nickname,
-      ...(picks || {}),
-    }, token);
+    const response = await http.post(
+      '/forms',
+      {
+        nickname,
+        ...(picks || {}),
+      },
+      token
+    );
     return response;
   },
 
@@ -90,7 +107,27 @@ export const createAuthenticatedApi = (token: string) => ({
 
   // Submit form as final
   submitForm: async (formId: string) => {
-    const response = await http.post(`/forms/${formId}/submit`, undefined, token);
+    const response = await http.post(
+      `/forms/${formId}/submit`,
+      undefined,
+      token
+    );
+    return response;
+  },
+
+  // Calculate bracket from match results
+  calculateBracket: async (
+    matchResults: Array<{
+      matchId: string;
+      team1Score: number;
+      team2Score: number;
+    }>
+  ) => {
+    const response = await http.post(
+      '/bracket/calculate',
+      { matchResults },
+      token
+    );
     return response;
   },
 });
@@ -101,7 +138,11 @@ export const api = createAuthenticatedApi('');
 // Predictions API functions (now using Forms API)
 export const predictionsApi = {
   // Get all matches
-  getMatches: async (params?: { stage?: string; group?: string; limit?: number }) => {
+  getMatches: async (params?: {
+    stage?: string;
+    group?: string;
+    limit?: number;
+  }) => {
     const query = new URLSearchParams();
     if (params?.stage) query.append('stage', params.stage);
     if (params?.group) query.append('group', params.group);
@@ -130,11 +171,16 @@ export const predictionsApi = {
   ) => {
     const api = createAuthenticatedApi(token);
     return api.savePicks(formId, {
-      matchPicks: predictions.map(p => ({
+      matchPicks: predictions.map((p) => ({
         matchId: p.matchId,
         predScoreA: p.predScoreA,
         predScoreB: p.predScoreB,
-        predOutcome: p.predScoreA > p.predScoreB ? 'W' : p.predScoreA < p.predScoreB ? 'L' : 'D',
+        predOutcome:
+          p.predScoreA > p.predScoreB
+            ? 'W'
+            : p.predScoreA < p.predScoreB
+            ? 'L'
+            : 'D',
       })),
     });
   },
@@ -173,7 +219,8 @@ export const apiUrls = {
   leaderboard: (leagueId: string, limit = 10) =>
     `/leagues/${leagueId}/leaderboard?limit=${limit}`,
   myForm: () => `/forms/me`,
-  myPredictions: (formId?: string) => formId ? `/forms/${formId}/with-picks` : null,
+  myPredictions: (formId?: string) =>
+    formId ? `/forms/${formId}/with-picks` : null,
   matches: (params?: { stage?: string; group?: string }) => {
     const query = new URLSearchParams();
     if (params?.stage) query.append('stage', params.stage);

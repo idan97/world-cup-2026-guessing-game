@@ -73,14 +73,20 @@ function calculateThirdPlaceAssignments(
     points: number;
     goalDiff: number;
     goalsFor: number;
-  }>
+  }>,
 ): { qualifiedGroups: string[]; assignments: ThirdPlaceAssignments } | null {
-  if (thirdPlaceTeams.length !== 12) return null;
+  if (thirdPlaceTeams.length !== 12) {
+    return null;
+  }
 
   // Sort by: 1) Points, 2) Goal Diff, 3) Goals For
   const sorted = [...thirdPlaceTeams].sort((a, b) => {
-    if (a.points !== b.points) return b.points - a.points;
-    if (a.goalDiff !== b.goalDiff) return b.goalDiff - a.goalDiff;
+    if (a.points !== b.points) {
+      return b.points - a.points;
+    }
+    if (a.goalDiff !== b.goalDiff) {
+      return b.goalDiff - a.goalDiff;
+    }
     return b.goalsFor - a.goalsFor;
   });
 
@@ -101,7 +107,7 @@ function calculateThirdPlaceAssignments(
 // Simplified lookup - maps combination to match assignments
 // In full implementation, this would come from third_place_assignments.json
 function getThirdPlaceAssignmentsForCombination(
-  combination: string
+  combination: string,
 ): ThirdPlaceAssignments {
   // Common combinations for World Cup 2026
   const lookupTable: Record<string, ThirdPlaceAssignments> = {
@@ -323,7 +329,7 @@ export default function BracketFormPage() {
     Map<string, MatchPrediction>
   >(new Map());
   const [winnerSelections, setWinnerSelections] = useState<Map<string, string>>(
-    new Map()
+    new Map(),
   );
   const [topScorer, setTopScorer] = useState<string>('');
   const [nickname, setNickname] = useState<string>('');
@@ -334,6 +340,32 @@ export default function BracketFormPage() {
     text: string;
   } | null>(null);
   const [isEditingNickname, setIsEditingNickname] = useState(false);
+  const [calculatedBracket, setCalculatedBracket] = useState<{
+    groupStandings: Record<
+      string,
+      Array<{
+        position: number;
+        team: Team | null;
+        played: number;
+        wins: number;
+        draws: number;
+        losses: number;
+        goalsFor: number;
+        goalsAgainst: number;
+        goalDiff: number;
+        points: number;
+      }>
+    >;
+    thirdPlaceRanking: string[];
+    thirdPlaceAssignments: Record<number, string>;
+    r32Matches: Array<{
+      matchNumber: number;
+      team1Code: string;
+      team2Code: string;
+      team1: Team | null;
+      team2: Team | null;
+    }>;
+  } | null>(null);
 
   // Fetch data using SWR
   const { data: standingsData, error: standingsError } =
@@ -341,7 +373,7 @@ export default function BracketFormPage() {
 
   const { data: allMatches, error: matchesError } = useSWR<MatchData[]>(
     '/matches',
-    { revalidateOnFocus: false }
+    { revalidateOnFocus: false },
   );
 
   const { data: formData, mutate: mutateForm } = useSWR<FormData>(
@@ -350,7 +382,7 @@ export default function BracketFormPage() {
       revalidateOnFocus: false,
       shouldRetryOnError: false,
       errorRetryCount: 0,
-    }
+    },
   );
 
   const { data: myPredictions } = useSWR<{
@@ -359,7 +391,10 @@ export default function BracketFormPage() {
       predScoreA: number;
       predScoreB: number;
     }>;
-    advancePicks: any[];
+    advancePicks: Array<{
+      stage: string;
+      teamId: string;
+    }>;
     topScorerPicks: Array<{
       playerName: string;
     }>;
@@ -404,7 +439,9 @@ export default function BracketFormPage() {
 
   // Process groups data with calculated standings based on predictions
   const groups = useMemo<GroupDisplay[]>(() => {
-    if (!standingsData?.groups || !allMatches) return [];
+    if (!standingsData?.groups || !allMatches) {
+      return [];
+    }
 
     return GROUPS_LIST.map((letter) => {
       const groupStandings = standingsData.groups[letter] || [];
@@ -414,7 +451,7 @@ export default function BracketFormPage() {
           (m.team1Code.endsWith(letter) ||
             m.team2Code.endsWith(letter) ||
             m.team1?.groupLetter === letter ||
-            m.team2?.groupLetter === letter)
+            m.team2?.groupLetter === letter),
       );
 
       // Calculate predicted standings based on predictions
@@ -434,16 +471,20 @@ export default function BracketFormPage() {
       // Process each match prediction
       groupMatches.forEach((match) => {
         const pred = matchPredictions.get(match.id);
-        if (!pred) return;
+        if (!pred) {
+          return;
+        }
 
         const team1Idx = standingsWithPredictions.findIndex(
-          (s) => s.team?.id === match.team1?.id
+          (s) => s.team?.id === match.team1?.id,
         );
         const team2Idx = standingsWithPredictions.findIndex(
-          (s) => s.team?.id === match.team2?.id
+          (s) => s.team?.id === match.team2?.id,
         );
 
-        if (team1Idx === -1 || team2Idx === -1) return;
+        if (team1Idx === -1 || team2Idx === -1) {
+          return;
+        }
 
         // Update played count
         standingsWithPredictions[team1Idx].played++;
@@ -479,8 +520,12 @@ export default function BracketFormPage() {
 
       // Sort by points, then goal diff, then goals for
       const sortedStandings = [...standingsWithPredictions].sort((a, b) => {
-        if (b.points !== a.points) return b.points - a.points;
-        if (b.goalDiff !== a.goalDiff) return b.goalDiff - a.goalDiff;
+        if (b.points !== a.points) {
+          return b.points - a.points;
+        }
+        if (b.goalDiff !== a.goalDiff) {
+          return b.goalDiff - a.goalDiff;
+        }
         return b.goalsFor - a.goalsFor;
       });
 
@@ -526,7 +571,7 @@ export default function BracketFormPage() {
     groups.forEach((group) => {
       // Check if all 4 teams have played at least 1 predicted match
       const allTeamsHavePredictions = group.standings.every(
-        (s) => s.played >= 1
+        (s) => s.played >= 1,
       );
 
       const thirdPlace = group.standings[2];
@@ -553,14 +598,65 @@ export default function BracketFormPage() {
     return result;
   }, [groups]);
 
+  // Check if all 72 group stage matches have predictions
+  const allGroupMatchesFilled = useMemo(() => {
+    if (!allMatches) {
+      return false;
+    }
+    const groupMatches = allMatches.filter((m) => m.stage === 'GROUP');
+    return (
+      groupMatches.length === 72 &&
+      groupMatches.every((m) => {
+        const pred = matchPredictions.get(m.id);
+        return (
+          pred &&
+          typeof pred.predScoreA === 'number' &&
+          typeof pred.predScoreB === 'number'
+        );
+      })
+    );
+  }, [allMatches, matchPredictions]);
+
+  // Call API when all group matches filled
+  useEffect(() => {
+    if (allGroupMatchesFilled && !calculatedBracket) {
+      calculateKnockoutBracket();
+    }
+  }, [allGroupMatchesFilled]);
+
+  const calculateKnockoutBracket = async () => {
+    if (!allMatches) {
+      return;
+    }
+
+    const groupMatches = allMatches.filter((m) => m.stage === 'GROUP');
+    const matchResults = groupMatches.map((match) => {
+      const pred = matchPredictions.get(match.id);
+      return {
+        matchId: match.id,
+        team1Score: typeof pred?.predScoreA === 'number' ? pred.predScoreA : 0,
+        team2Score: typeof pred?.predScoreB === 'number' ? pred.predScoreB : 0,
+      };
+    });
+
+    try {
+      const response = await api.calculateBracket(matchResults);
+      setCalculatedBracket(response);
+    } catch (error) {
+      console.error('Failed to calculate bracket:', error);
+    }
+  };
+
   // Calculate third place assignments (which 8 third-place teams advance and where they play)
   const thirdPlaceResult = useMemo(() => {
     const completedGroups = Object.entries(predictedQualifiers).filter(
-      ([_, q]) => q.isComplete && q.thirdStats
+      ([_, q]) => q.isComplete && q.thirdStats,
     );
 
     // Need all 12 groups to have predictions to calculate
-    if (completedGroups.length !== 12) return null;
+    if (completedGroups.length !== 12) {
+      return null;
+    }
 
     const thirdPlaceTeams = completedGroups.map(([letter, q]) => ({
       groupLetter: letter,
@@ -578,24 +674,36 @@ export default function BracketFormPage() {
     (code: string, matchNumber: number): Team | null => {
       // Third place code
       if (code === '3rd') {
-        if (!thirdPlaceResult?.assignments) return null;
+        if (!thirdPlaceResult?.assignments) {
+          return null;
+        }
         const groupLetter = thirdPlaceResult.assignments[matchNumber];
-        if (!groupLetter) return null;
+        if (!groupLetter) {
+          return null;
+        }
         return predictedQualifiers[groupLetter]?.third || null;
       }
 
       const position = parseInt(code[0]);
       const groupLetter = code[1];
 
-      if (!predictedQualifiers[groupLetter]) return null;
+      if (!predictedQualifiers[groupLetter]) {
+        return null;
+      }
 
-      if (position === 1) return predictedQualifiers[groupLetter].first;
-      if (position === 2) return predictedQualifiers[groupLetter].second;
-      if (position === 3) return predictedQualifiers[groupLetter].third;
+      if (position === 1) {
+        return predictedQualifiers[groupLetter].first;
+      }
+      if (position === 2) {
+        return predictedQualifiers[groupLetter].second;
+      }
+      if (position === 3) {
+        return predictedQualifiers[groupLetter].third;
+      }
 
       return null;
     },
-    [predictedQualifiers, thirdPlaceResult]
+    [predictedQualifiers, thirdPlaceResult],
   );
 
   // Get winner of a match based on prediction
@@ -603,13 +711,19 @@ export default function BracketFormPage() {
     (
       matchId: string,
       team1?: Team | null,
-      team2?: Team | null
+      team2?: Team | null,
     ): Team | null => {
       const pred = matchPredictions.get(matchId);
-      if (!pred) return null;
+      if (!pred) {
+        return null;
+      }
 
-      if (pred.predScoreA > pred.predScoreB) return team1 || null;
-      if (pred.predScoreB > pred.predScoreA) return team2 || null;
+      if (pred.predScoreA > pred.predScoreB) {
+        return team1 || null;
+      }
+      if (pred.predScoreB > pred.predScoreA) {
+        return team2 || null;
+      }
 
       // For tied knockout matches, check winner selection
       const winnerId = winnerSelections.get(matchId);
@@ -619,7 +733,7 @@ export default function BracketFormPage() {
 
       return null;
     },
-    [matchPredictions, winnerSelections]
+    [matchPredictions, winnerSelections],
   );
 
   // Process knockout matches with predicted teams from group standings
@@ -767,7 +881,7 @@ export default function BracketFormPage() {
       if (winner) {
         sfLosers.set(
           m.match.matchNumber,
-          winner.id === m.team1?.id ? m.team2 || null : m.team1 || null
+          winner.id === m.team1?.id ? m.team2 || null : m.team1 || null,
         );
       }
     });
@@ -820,12 +934,14 @@ export default function BracketFormPage() {
       });
       setIsDirty(true);
     },
-    []
+    [],
   );
 
   // Fill group stage with random results
   const fillRandomGroupStage = useCallback(() => {
-    if (!allMatches) return;
+    if (!allMatches) {
+      return;
+    }
 
     const groupMatches = allMatches.filter((m) => m.stage === 'GROUP');
     const newPredictions = new Map(matchPredictions);
@@ -855,7 +971,7 @@ export default function BracketFormPage() {
       });
       setIsDirty(true);
     },
-    []
+    [],
   );
 
   // Handle top scorer change
@@ -950,7 +1066,10 @@ export default function BracketFormPage() {
       }
 
       // Save all picks at once
-      if ((picksToSave.matchPicks || picksToSave.topScorerPicks) && currentFormId) {
+      if (
+        (picksToSave.matchPicks || picksToSave.topScorerPicks) &&
+        currentFormId
+      ) {
         await api.savePicks(currentFormId, picksToSave);
       }
 

@@ -86,9 +86,30 @@ export async function updateMatchResult(result: MatchResult): Promise<void> {
     // Check if group stage is complete
     const isGroupStageComplete = await checkGroupStageComplete();
     if (isGroupStageComplete) {
-      logger.info('Group stage complete, updating third place rankings');
-      await updateThirdPlaceRankings();
-      await assignR32ThirdPlaceTeams();
+      logger.info('Group stage complete, calculating knockout bracket');
+
+      // Get all finished group stage matches
+      const groupMatches = await prisma.match.findMany({
+        where: { stage: 'GROUP', isFinished: true },
+      });
+
+      const matchResults = groupMatches
+        .filter((m) => m.team1Score !== null && m.team2Score !== null)
+        .map((m) => ({
+          matchId: m.id,
+          team1Score: m.team1Score!,
+          team2Score: m.team2Score!,
+        }));
+
+      // Calculate bracket using new service
+      const BracketService = await import('./BracketService');
+      const bracket =
+        await BracketService.calculateKnockoutBracket(matchResults);
+
+      // Assign teams to R32 matches in database
+      await BracketService.assignTeamsToR32Matches(bracket.r32Matches);
+
+      logger.info('R32 teams assigned to matches');
     }
   }
 
@@ -191,10 +212,7 @@ async function updateGroupStandingsFromMatch(
     }),
   ]);
 
-  logger.info(
-    { groupLetter: team1.groupLetter },
-    'Updated group standings',
-  );
+  logger.info({ groupLetter: team1.groupLetter }, 'Updated group standings');
 
   // Re-sort the group
   await sortGroupStandings(team1.groupLetter);
@@ -268,123 +286,6 @@ async function checkGroupStageComplete(): Promise<boolean> {
   });
 
   return groupMatches.every((m) => m.isFinished);
-}
-
-/**
- * Updates third place rankings after group stage is complete
- */
-async function updateThirdPlaceRankings(): Promise<void> {
-  // Get all 3rd place teams
-  const thirdPlaceStandings = await prisma.groupStanding.findMany({
-    where: {
-      position: 3,
-      teamId: { not: null },
-    },
-    include: {
-      team: true,
-    },
-  });
-
-  // Sort by: points DESC, goalDiff DESC, goalsFor DESC
-  const sorted = thirdPlaceStandings.sort((a, b) => {
-    if (a.points !== b.points) {
-      return b.points - a.points;
-    }
-    if (a.goalDiff !== b.goalDiff) {
-      return b.goalDiff - a.goalDiff;
-    }
-    return b.goalsFor - a.goalsFor;
-  });
-
-  // Take top 8 and assign ranks
-  for (let i = 0; i < Math.min(8, sorted.length); i++) {
-    const standing = sorted[i];
-    if (!standing) {
-      continue;
-    }
-
-    await prisma.thirdPlaceRanking.update({
-      where: { groupLetter: standing.groupLetter },
-      data: {
-        teamId: standing.teamId,
-        rank: i + 1,
-        points: standing.points,
-        goalDiff: standing.goalDiff,
-        goalsFor: standing.goalsFor,
-      },
-    });
-  }
-
-  logger.info('Updated third place rankings (top 8 teams advance)');
-}
-
-/**
- * Assigns third place teams to R32 matches based on rankings
- */
-async function assignR32ThirdPlaceTeams(): Promise<void> {
-  // Import the resolver
-  const { resolveThirdPlaceAssignments } = await import(
-    '../utils/thirdPlaceResolver'
-  );
-
-  // Get the 8 qualified third place teams in rank order
-  const qualifiedThirdPlace = await prisma.thirdPlaceRanking.findMany({
-    where: {
-      rank: { lte: 8, not: null },
-    },
-    orderBy: { rank: 'asc' },
-  });
-
-  const rankedGroups = qualifiedThirdPlace.map((t) => t.groupLetter);
-
-  // Get assignments
-  const assignments = resolveThirdPlaceAssignments(rankedGroups);
-
-  // Update R32 matches with third place codes
-  for (const [matchNumberStr, groupLetter] of Object.entries(assignments)) {
-    const matchNumber = parseInt(matchNumberStr);
-
-    // Find the third place team from this group
-    const thirdPlaceTeam = await prisma.groupStanding.findFirst({
-      where: {
-        groupLetter,
-        position: 3,
-      },
-    });
-
-    if (!thirdPlaceTeam?.teamId) {
-      continue;
-    }
-
-    // Find which position in the match needs this team (team1 or team2)
-    const match = await prisma.match.findUnique({
-      where: { matchNumber },
-    });
-
-    if (!match) {
-      continue;
-    }
-
-    // Check if team1Code or team2Code contains '3-'
-    const updateData: { team1Id?: string; team2Id?: string } = {};
-    if (match.team1Code.startsWith('3-')) {
-      updateData.team1Id = thirdPlaceTeam.teamId;
-    }
-    if (match.team2Code.startsWith('3-')) {
-      updateData.team2Id = thirdPlaceTeam.teamId;
-    }
-
-    if (Object.keys(updateData).length > 0) {
-      await prisma.match.update({
-        where: { matchNumber },
-        data: updateData,
-      });
-      logger.info(
-        { groupLetter, matchNumber },
-        'Assigned third place team to R32 match',
-      );
-    }
-  }
 }
 
 /**

@@ -33,8 +33,8 @@ export default function KnockoutMatch({
   const team1 = matchDisplay?.team1;
   const team2 = matchDisplay?.team2;
 
-  const [scoreA, setScoreA] = useState(prediction?.predScoreA ?? 0);
-  const [scoreB, setScoreB] = useState(prediction?.predScoreB ?? 0);
+  const [scoreA, setScoreA] = useState<string | number>(prediction?.predScoreA ?? '-');
+  const [scoreB, setScoreB] = useState<string | number>(prediction?.predScoreB ?? '-');
   const [selectedWinner, setSelectedWinner] = useState<string | null>(null);
 
   useEffect(() => {
@@ -46,13 +46,17 @@ export default function KnockoutMatch({
 
   const handleScoreChange = (team: 'A' | 'B', value: string) => {
     if (!match) return;
-    const numValue = Math.max(0, parseInt(value) || 0);
+    const numValue = value === '' || value === '-' ? '-' : Math.max(0, parseInt(value) || 0);
     if (team === 'A') {
       setScoreA(numValue);
-      onPredictionChange(match.id, numValue, scoreB);
+      if (typeof numValue === 'number') {
+        onPredictionChange(match.id, numValue, typeof scoreB === 'number' ? scoreB : 0);
+      }
     } else {
       setScoreB(numValue);
-      onPredictionChange(match.id, scoreA, numValue);
+      if (typeof numValue === 'number') {
+        onPredictionChange(match.id, typeof scoreA === 'number' ? scoreA : 0, numValue);
+      }
     }
     // Reset winner selection when scores change
     setSelectedWinner(null);

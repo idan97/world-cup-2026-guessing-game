@@ -15,7 +15,12 @@ export function useApi() {
 
   // Convenience methods that handle token automatically
   const createForm = useCallback(
-    async (nickname: string, picks?: Parameters<ReturnType<typeof createAuthenticatedApi>['createForm']>[1]) => {
+    async (
+      nickname: string,
+      picks?: Parameters<
+        ReturnType<typeof createAuthenticatedApi>['createForm']
+      >[1]
+    ) => {
       const api = await getAuthenticatedApi();
       return api.createForm(nickname, picks);
     },
@@ -23,7 +28,12 @@ export function useApi() {
   );
 
   const savePicks = useCallback(
-    async (formId: string, picks: Parameters<ReturnType<typeof createAuthenticatedApi>['savePicks']>[1]) => {
+    async (
+      formId: string,
+      picks: Parameters<
+        ReturnType<typeof createAuthenticatedApi>['savePicks']
+      >[1]
+    ) => {
       const api = await getAuthenticatedApi();
       return api.savePicks(formId, picks);
     },
@@ -48,14 +58,26 @@ export function useApi() {
 
   // Predictions API (now using Forms API)
   const saveMatchPredictions = useCallback(
-    async (formId: string, predictions: Array<{ matchId: string; predScoreA: number; predScoreB: number }>) => {
+    async (
+      formId: string,
+      predictions: Array<{
+        matchId: string;
+        predScoreA: number;
+        predScoreB: number;
+      }>
+    ) => {
       const api = await getAuthenticatedApi();
       return api.savePicks(formId, {
-        matchPicks: predictions.map(p => ({
+        matchPicks: predictions.map((p) => ({
           matchId: p.matchId,
           predScoreA: p.predScoreA,
           predScoreB: p.predScoreB,
-          predOutcome: p.predScoreA > p.predScoreB ? 'W' : p.predScoreA < p.predScoreB ? 'L' : 'D',
+          predOutcome:
+            p.predScoreA > p.predScoreB
+              ? 'W'
+              : p.predScoreA < p.predScoreB
+              ? 'L'
+              : 'D',
         })),
       });
     },
@@ -63,7 +85,13 @@ export function useApi() {
   );
 
   const saveAdvancePredictions = useCallback(
-    async (formId: string, predictions: Array<{ stage: 'R32' | 'R16' | 'QF' | 'SF' | 'F'; teamId: string }>) => {
+    async (
+      formId: string,
+      predictions: Array<{
+        stage: 'R32' | 'R16' | 'QF' | 'SF' | 'F';
+        teamId: string;
+      }>
+    ) => {
       const api = await getAuthenticatedApi();
       return api.savePicks(formId, {
         advancePicks: predictions,
@@ -82,6 +110,20 @@ export function useApi() {
     [getAuthenticatedApi]
   );
 
+  const calculateBracket = useCallback(
+    async (
+      matchResults: Array<{
+        matchId: string;
+        team1Score: number;
+        team2Score: number;
+      }>
+    ) => {
+      const api = await getAuthenticatedApi();
+      return api.calculateBracket(matchResults);
+    },
+    [getAuthenticatedApi]
+  );
+
   return {
     createForm,
     savePicks,
@@ -90,6 +132,6 @@ export function useApi() {
     saveMatchPredictions,
     saveAdvancePredictions,
     saveTopScorer,
+    calculateBracket,
   };
 }
-
