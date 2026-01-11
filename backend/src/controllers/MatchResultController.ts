@@ -20,15 +20,19 @@ export class MatchResultController extends BaseController {
   ): Promise<Response> => {
     try {
       const matchId = req.params['matchId'];
-      
+
       if (!matchId) {
         return this.badRequest(res, 'Match ID is required');
       }
-      
+
       // Validate request body
       const result = updateResultSchema.safeParse(req.body);
       if (!result.success) {
-        return this.badRequest(res, 'Invalid request data', result.error.errors);
+        return this.badRequest(
+          res,
+          'Invalid request data',
+          result.error.errors
+        );
       }
 
       const { team1Score, team2Score } = result.data;
@@ -61,17 +65,16 @@ export class MatchResultController extends BaseController {
         { error, matchId: req.params['matchId'], userId: req.auth?.userId },
         'Error updating match result'
       );
-      
+
       if (error.message?.includes('not found')) {
         return this.notFound(res, error.message);
       }
-      
+
       if (error.message?.includes('already finished')) {
         return this.badRequest(res, error.message);
       }
-      
+
       return this.internalError(res, error);
     }
   };
 }
-

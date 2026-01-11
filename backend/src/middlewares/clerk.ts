@@ -9,7 +9,10 @@ import { LeagueRole } from '@prisma/client';
 // Initialize Clerk middleware
 // Log Clerk config on startup (one-time)
 if (config.clerkSecretKey) {
-  console.log('[Clerk] Secret key loaded:', config.clerkSecretKey.substring(0, 15) + '...');
+  console.log(
+    '[Clerk] Secret key loaded:',
+    config.clerkSecretKey.substring(0, 15) + '...'
+  );
 } else {
   console.error('[Clerk] WARNING: No CLERK_SECRET_KEY configured!');
 }
@@ -35,16 +38,22 @@ export const syncUser = async (
     }
 
     // Get user data from Clerk (email can be in different places depending on Clerk config)
-    const email = (sessionClaims as any).email || 
-                  (sessionClaims as any).email_address || 
-                  (sessionClaims as any).primary_email_address ||
-                  `${userId}@clerk.local`; // Fallback for users without email
-    const name = (sessionClaims as any).name || 
-                 (sessionClaims as any).full_name || 
-                 'Unknown User';
+    const email =
+      (sessionClaims as any).email ||
+      (sessionClaims as any).email_address ||
+      (sessionClaims as any).primary_email_address ||
+      `${userId}@clerk.local`; // Fallback for users without email
+    const name =
+      (sessionClaims as any).name ||
+      (sessionClaims as any).full_name ||
+      'Unknown User';
 
     // Sync user from Clerk
-    const { isNewUser } = await syncUserFromClerk(userId, email as string, name as string);
+    const { isNewUser } = await syncUserFromClerk(
+      userId,
+      email as string,
+      name as string
+    );
 
     if (isNewUser) {
       await provisionNewUser(userId, email);

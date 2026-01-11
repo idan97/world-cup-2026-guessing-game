@@ -1,6 +1,6 @@
 /**
  * Match Result Service
- * 
+ *
  * Handles updating match results and automatically updating group standings,
  * third place rankings, and knockout stage team assignments.
  */
@@ -65,12 +65,19 @@ export async function updateMatchResult(result: MatchResult): Promise<void> {
     },
   });
 
-  console.log(`✅ Match ${match.matchNumber} result updated: ${team1Score}-${team2Score}`);
+  console.log(
+    `✅ Match ${match.matchNumber} result updated: ${team1Score}-${team2Score}`
+  );
 
   // If it's a group stage match, update group standings
   if (match.stage === 'GROUP' && match.team1Id && match.team2Id) {
-    await updateGroupStandingsFromMatch(match.team1Id, match.team2Id, team1Score, team2Score);
-    
+    await updateGroupStandingsFromMatch(
+      match.team1Id,
+      match.team2Id,
+      team1Score,
+      team2Score
+    );
+
     // Check if group stage is complete
     const isGroupStageComplete = await checkGroupStageComplete();
     if (isGroupStageComplete) {
@@ -214,18 +221,18 @@ async function sortGroupStandings(groupLetter: string): Promise<void> {
     for (let i = 0; i < sorted.length; i++) {
       const standing = sorted[i];
       if (!standing) continue;
-      
+
       await tx.groupStanding.update({
         where: { id: standing.id },
         data: { position: -(i + 1) },
       });
     }
-    
+
     // Step 2: Set all to correct positions
     for (let i = 0; i < sorted.length; i++) {
       const standing = sorted[i];
       if (!standing) continue;
-      
+
       await tx.groupStanding.update({
         where: { id: standing.id },
         data: { position: i + 1 },
@@ -273,7 +280,7 @@ async function updateThirdPlaceRankings(): Promise<void> {
   for (let i = 0; i < Math.min(8, sorted.length); i++) {
     const standing = sorted[i];
     if (!standing) continue;
-    
+
     await prisma.thirdPlaceRanking.update({
       where: { groupLetter: standing.groupLetter },
       data: {
@@ -294,7 +301,9 @@ async function updateThirdPlaceRankings(): Promise<void> {
  */
 async function assignR32ThirdPlaceTeams(): Promise<void> {
   // Import the resolver
-  const { resolveThirdPlaceAssignments } = await import('../utils/thirdPlaceResolver');
+  const { resolveThirdPlaceAssignments } = await import(
+    '../utils/thirdPlaceResolver'
+  );
 
   // Get the 8 qualified third place teams in rank order
   const qualifiedThirdPlace = await prisma.thirdPlaceRanking.findMany({
@@ -305,14 +314,14 @@ async function assignR32ThirdPlaceTeams(): Promise<void> {
   });
 
   const rankedGroups = qualifiedThirdPlace.map((t) => t.groupLetter);
-  
+
   // Get assignments
   const assignments = resolveThirdPlaceAssignments(rankedGroups);
 
   // Update R32 matches with third place codes
   for (const [matchNumberStr, groupLetter] of Object.entries(assignments)) {
     const matchNumber = parseInt(matchNumberStr);
-    
+
     // Find the third place team from this group
     const thirdPlaceTeam = await prisma.groupStanding.findFirst({
       where: {
@@ -344,7 +353,9 @@ async function assignR32ThirdPlaceTeams(): Promise<void> {
         where: { matchNumber },
         data: updateData,
       });
-      console.log(`🎯 Assigned Group ${groupLetter} 3rd place to Match ${matchNumber}`);
+      console.log(
+        `🎯 Assigned Group ${groupLetter} 3rd place to Match ${matchNumber}`
+      );
     }
   }
 }
@@ -358,19 +369,16 @@ async function assignWinnerToNextMatch(
 ): Promise<void> {
   // Find next match that references this match
   const winnerCode = `W${matchNumber}`;
-  
+
   const nextMatches = await prisma.match.findMany({
     where: {
-      OR: [
-        { team1Code: winnerCode },
-        { team2Code: winnerCode },
-      ],
+      OR: [{ team1Code: winnerCode }, { team2Code: winnerCode }],
     },
   });
 
   for (const nextMatch of nextMatches) {
     const updateData: any = {};
-    
+
     if (nextMatch.team1Code === winnerCode) {
       updateData.team1Id = winnerId;
     }
@@ -434,4 +442,3 @@ export default {
   updateMatchResult,
   initializeTeamInGroupStanding,
 };
-

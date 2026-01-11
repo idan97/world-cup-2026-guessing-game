@@ -8,27 +8,32 @@ import logger from '../logger';
 import prisma from '../db';
 
 // Validation schemas
-const matchPickSchema = z.object({
-  matchId: z.string().min(1),
-  predScoreA: z.number().int().min(0),
-  predScoreB: z.number().int().min(0),
-  predOutcome: z.nativeEnum(Outcome),
-}).refine((data) => {
-  // Validate that outcome matches the scores
-  // W = team 1 wins, L = team 2 wins, D = draw
-  if (data.predOutcome === 'W' && data.predScoreA <= data.predScoreB) {
-    return false;
-  }
-  if (data.predOutcome === 'L' && data.predScoreB <= data.predScoreA) {
-    return false;
-  }
-  if (data.predOutcome === 'D' && data.predScoreA !== data.predScoreB) {
-    return false;
-  }
-  return true;
-}, {
-  message: 'Predicted outcome must match the predicted scores',
-});
+const matchPickSchema = z
+  .object({
+    matchId: z.string().min(1),
+    predScoreA: z.number().int().min(0),
+    predScoreB: z.number().int().min(0),
+    predOutcome: z.nativeEnum(Outcome),
+  })
+  .refine(
+    (data) => {
+      // Validate that outcome matches the scores
+      // W = team 1 wins, L = team 2 wins, D = draw
+      if (data.predOutcome === 'W' && data.predScoreA <= data.predScoreB) {
+        return false;
+      }
+      if (data.predOutcome === 'L' && data.predScoreB <= data.predScoreA) {
+        return false;
+      }
+      if (data.predOutcome === 'D' && data.predScoreA !== data.predScoreB) {
+        return false;
+      }
+      return true;
+    },
+    {
+      message: 'Predicted outcome must match the predicted scores',
+    }
+  );
 
 const advancePickSchema = z.object({
   stage: z.nativeEnum(Stage).refine((stage) => stage !== 'GROUP', {
@@ -219,7 +224,7 @@ export class FormController extends BaseController {
       if (matchPicks && matchPicks.length > 0) {
         const matchIds = matchPicks.map((p) => p.matchId);
         const matches = await MatchModel.findByIds(matchIds);
-        
+
         if (matches.length !== matchIds.length) {
           const foundIds = matches.map((m) => m.id);
           const missingIds = matchIds.filter((id) => !foundIds.includes(id));

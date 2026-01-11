@@ -3,7 +3,7 @@ import type { Stage, Outcome, Match, MatchPick } from '@prisma/client';
 
 /**
  * מטריצת ניקוד למונדיאל 2026
- * 
+ *
  * לכל שלב:
  * - decision: נקודות על ניחוש נכון של ההכרעה (W/D/L או מנצח)
  * - exactResult: נקודות נוספות על ניחוש מדויק של התוצאה
@@ -11,34 +11,34 @@ import type { Stage, Outcome, Match, MatchPick } from '@prisma/client';
  */
 const SCORING_MATRIX = {
   GROUP: {
-    decision: 1,      // ניחוש נכון של הכרעה
-    exactResult: 3,   // ניחוש מדויק של תוצאה
-    advance: 2,       // עלייה ל-R32
+    decision: 1, // ניחוש נכון של הכרעה
+    exactResult: 3, // ניחוש מדויק של תוצאה
+    advance: 2, // עלייה ל-R32
   },
   R32: {
     decision: 3,
     exactResult: 3,
-    advance: 2,       // עלייה ל-R16
+    advance: 2, // עלייה ל-R16
   },
   R16: {
     decision: 3,
     exactResult: 3,
-    advance: 4,       // עלייה לרבע גמר
+    advance: 4, // עלייה לרבע גמר
   },
   QF: {
     decision: 5,
     exactResult: 3,
-    advance: 6,       // עלייה לחצי גמר
+    advance: 6, // עלייה לחצי גמר
   },
   SF: {
     decision: 7,
     exactResult: 3,
-    advance: 8,       // עלייה לגמר
+    advance: 8, // עלייה לגמר
   },
   F: {
     decision: 9,
     exactResult: 3,
-    advance: 0,       // אין שלב הבא
+    advance: 0, // אין שלב הבא
   },
 } as const;
 
@@ -59,18 +59,19 @@ function determineOutcome(team1Score: number, team2Score: number): Outcome {
  * @param pick הניחוש של המשתמש
  * @returns מספר הנקודות שהמשתמש זכה במשחק זה
  */
-export function calculateMatchScore(
-  match: Match,
-  pick: MatchPick
-): number {
+export function calculateMatchScore(match: Match, pick: MatchPick): number {
   // אם המשחק לא הסתיים, אין ניקוד
-  if (!match.isFinished || match.team1Score === null || match.team2Score === null) {
+  if (
+    !match.isFinished ||
+    match.team1Score === null ||
+    match.team2Score === null
+  ) {
     return 0;
   }
 
   const stage = match.stage;
   const scoring = SCORING_MATRIX[stage];
-  
+
   let points = 0;
 
   // בדיקה אם ניחש את ההכרעה
@@ -219,7 +220,10 @@ export async function calculateTotalScore(
   totalPoints += advancePoints;
 
   // 3. חישוב ניקוד ממלך השערים
-  const topScorerPoints = await calculateTopScorerScore(formId, actualTopScorer);
+  const topScorerPoints = await calculateTopScorerScore(
+    formId,
+    actualTopScorer
+  );
   totalPoints += topScorerPoints;
 
   return {
@@ -257,10 +261,10 @@ export async function calculateTiebreakers(
   formId: string,
   actualTopScorer: string | null = null
 ): Promise<{
-  exactResults: number;        // פגיעות מדויקות בתוצאה
-  correctDecisions: number;     // פגיעות בהכרעה
-  correctChampion: boolean;     // פגיעה באלופה
-  correctTopScorer: boolean;    // פגיעה במלך השערים
+  exactResults: number; // פגיעות מדויקות בתוצאה
+  correctDecisions: number; // פגיעות בהכרעה
+  correctChampion: boolean; // פגיעה באלופה
+  correctTopScorer: boolean; // פגיעה במלך השערים
   correctAdvances: Record<string, number>; // עליית קבוצות נכונה לפי שלב
 }> {
   const matchPicks = await prisma.matchPick.findMany({
@@ -274,7 +278,11 @@ export async function calculateTiebreakers(
   // ספירת פגיעות במשחקים
   for (const pick of matchPicks) {
     const match = pick.match;
-    if (!match.isFinished || match.team1Score === null || match.team2Score === null) {
+    if (
+      !match.isFinished ||
+      match.team1Score === null ||
+      match.team2Score === null
+    ) {
       continue;
     }
 
@@ -282,7 +290,10 @@ export async function calculateTiebreakers(
     if (actualOutcome === pick.predOutcome) {
       correctDecisions++;
 
-      if (match.team1Score === pick.predScoreA && match.team2Score === pick.predScoreB) {
+      if (
+        match.team1Score === pick.predScoreA &&
+        match.team2Score === pick.predScoreB
+      ) {
         exactResults++;
       }
     }
@@ -364,7 +375,7 @@ export async function updateFormScore(
   actualTopScorer: string | null = null
 ): Promise<void> {
   const result = await calculateTotalScore(formId, actualTopScorer);
-  
+
   await prisma.form.update({
     where: { id: formId },
     data: { totalPoints: result.totalPoints },
@@ -410,4 +421,3 @@ export async function updateAllScores(
     }
   }
 }
-

@@ -200,7 +200,10 @@ export class AdminController extends BaseController {
       }
 
       const updateData: any = { ...result.data };
-      if (updateData.scheduledAt && typeof updateData.scheduledAt === 'string') {
+      if (
+        updateData.scheduledAt &&
+        typeof updateData.scheduledAt === 'string'
+      ) {
         updateData.scheduledAt = new Date(updateData.scheduledAt);
       }
 
@@ -284,15 +287,15 @@ export class AdminController extends BaseController {
         { error, matchNumber: req.params['id'], userId: req.auth.userId },
         'Error recording match result'
       );
-      
+
       if (error.message?.includes('not found')) {
         return this.notFound(res, error.message);
       }
-      
+
       if (error.message?.includes('already finished')) {
         return this.badRequest(res, error.message);
       }
-      
+
       return this.internalError(res, error);
     }
   };
@@ -329,7 +332,9 @@ export class AdminController extends BaseController {
         );
       }
 
-      await TournamentSettingsService.setActualTopScorer(result.data.playerName);
+      await TournamentSettingsService.setActualTopScorer(
+        result.data.playerName
+      );
 
       logger.info(
         { userId: req.auth.userId, playerName: result.data.playerName },

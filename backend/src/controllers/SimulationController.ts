@@ -1,7 +1,10 @@
 import { Request, Response } from 'express';
 import { BaseController } from './BaseController';
 import { z } from 'zod';
-import { simulateLeagueScoring, getAllLeaguePredictions } from '../services/SimulationService';
+import {
+  simulateLeagueScoring,
+  getAllLeaguePredictions,
+} from '../services/SimulationService';
 import prisma from '../db';
 import logger from '../logger';
 
@@ -10,7 +13,11 @@ const simulatedMatchResultSchema = z.object({
   matchId: z.string().min(1),
   team1Score: z.number().int().min(0),
   team2Score: z.number().int().min(0),
-  winnerId: z.string().nullable().optional().transform(v => v ?? null),
+  winnerId: z
+    .string()
+    .nullable()
+    .optional()
+    .transform((v) => v ?? null),
 });
 
 const simulationRequestSchema = z.object({
@@ -32,7 +39,11 @@ export class SimulationController extends BaseController {
       // אימות נתונים
       const result = simulationRequestSchema.safeParse(req.body);
       if (!result.success) {
-        return this.badRequest(res, 'Invalid simulation data', result.error.errors);
+        return this.badRequest(
+          res,
+          'Invalid simulation data',
+          result.error.errors
+        );
       }
 
       const { leagueId, simulatedResults, actualTopScorer } = result.data;
@@ -110,7 +121,11 @@ export class SimulationController extends BaseController {
 
       const result = simulationDataSchema.safeParse(req.body);
       if (!result.success) {
-        return this.badRequest(res, 'Invalid simulation data', result.error.errors);
+        return this.badRequest(
+          res,
+          'Invalid simulation data',
+          result.error.errors
+        );
       }
 
       const { simulatedResults, actualTopScorer } = result.data;
@@ -284,16 +299,22 @@ export class SimulationController extends BaseController {
 
       // אימות נתונים
       const saveSchema = z.object({
-        results: z.record(z.object({
-          predScoreA: z.number().int().min(0),
-          predScoreB: z.number().int().min(0),
-        })),
+        results: z.record(
+          z.object({
+            predScoreA: z.number().int().min(0),
+            predScoreB: z.number().int().min(0),
+          })
+        ),
         topScorer: z.string().nullable().optional(),
       });
 
       const result = saveSchema.safeParse(req.body);
       if (!result.success) {
-        return this.badRequest(res, 'Invalid simulation data', result.error.errors);
+        return this.badRequest(
+          res,
+          'Invalid simulation data',
+          result.error.errors
+        );
       }
 
       const { results, topScorer } = result.data;
@@ -343,4 +364,3 @@ export class SimulationController extends BaseController {
     }
   };
 }
-

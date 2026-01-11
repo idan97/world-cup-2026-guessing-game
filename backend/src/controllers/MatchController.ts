@@ -69,7 +69,7 @@ export class MatchController extends BaseController {
       if (groupLetter) filters.groupLetter = groupLetter.toUpperCase();
       if (upcoming) filters.upcoming = upcoming;
       if (limit) filters.limit = limit;
-      
+
       const matches = await MatchModel.findWithFilters(filters);
 
       logger.info(
@@ -97,7 +97,7 @@ export class MatchController extends BaseController {
   ): Promise<Response> => {
     try {
       const windowParam = req.query['window'] as string | undefined;
-      
+
       // Parse window (default 2 days)
       let windowMs = 2 * 24 * 60 * 60 * 1000; // 2 days in ms
       if (windowParam) {
@@ -105,7 +105,8 @@ export class MatchController extends BaseController {
         if (match) {
           const value = parseInt(match[1]!, 10);
           const unit = match[2]!;
-          windowMs = unit === 'd' ? value * 24 * 60 * 60 * 1000 : value * 60 * 60 * 1000;
+          windowMs =
+            unit === 'd' ? value * 24 * 60 * 60 * 1000 : value * 60 * 60 * 1000;
         }
       }
 
@@ -119,8 +120,8 @@ export class MatchController extends BaseController {
       });
 
       // Filter by window
-      const filteredMatches = matches.filter(m => 
-        m.scheduledAt >= now && m.scheduledAt <= endTime
+      const filteredMatches = matches.filter(
+        (m) => m.scheduledAt >= now && m.scheduledAt <= endTime
       );
 
       logger.info(
@@ -142,7 +143,7 @@ export class MatchController extends BaseController {
   ): Promise<Response> => {
     try {
       const id = req.params['id'];
-      
+
       if (!id) {
         return this.badRequest(res, 'Match ID is required');
       }
@@ -155,7 +156,10 @@ export class MatchController extends BaseController {
 
       return this.success(res, match);
     } catch (error) {
-      logger.error({ error, matchId: req.params['id'] }, 'Error fetching match');
+      logger.error(
+        { error, matchId: req.params['id'] },
+        'Error fetching match'
+      );
       return this.internalError(res, error);
     }
   };
@@ -189,4 +193,3 @@ export class MatchController extends BaseController {
     }
   };
 }
-

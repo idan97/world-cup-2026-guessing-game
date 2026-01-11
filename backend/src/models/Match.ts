@@ -2,9 +2,9 @@ import prisma from '../db';
 import type { Stage } from '../types';
 import type { Prisma } from '@prisma/client';
 
-// Define Match type with relations based on what we actually fetch from Prisma  
+// Define Match type with relations based on what we actually fetch from Prisma
 export type MatchWithRelations = Prisma.MatchGetPayload<{
-  include: { team1: true; team2: true; winner: true }
+  include: { team1: true; team2: true; winner: true };
 }>;
 
 interface MatchFilters {
@@ -29,7 +29,9 @@ export class MatchModel {
   }
 
   // Get matches with flexible filters
-  static async findWithFilters(filters: MatchFilters): Promise<MatchWithRelations[]> {
+  static async findWithFilters(
+    filters: MatchFilters
+  ): Promise<MatchWithRelations[]> {
     const { stage, groupLetter, upcoming, limit } = filters;
 
     // Build where clause
@@ -41,10 +43,7 @@ export class MatchModel {
 
     if (groupLetter) {
       // Filter by group - matches where team1 or team2 belong to this group
-      where.OR = [
-        { team1: { groupLetter } },
-        { team2: { groupLetter } },
-      ];
+      where.OR = [{ team1: { groupLetter } }, { team2: { groupLetter } }];
     }
 
     if (upcoming) {

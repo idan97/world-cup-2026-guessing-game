@@ -8,7 +8,6 @@ export { Stage, Outcome, LeagueRole };
 export interface Team {
   id: string; // 'FRA'
   name: string; // 'France'
-  
 }
 
 /* users */

@@ -267,7 +267,7 @@ function calculateMatchScoreFromSimulation(
   simulatedResult: SimulatedMatchResult
 ): number {
   const match = pick.match;
-  
+
   // מטריצת הניקוד
   const SCORING_MATRIX = {
     GROUP: { decision: 1, exactResult: 3 },
@@ -472,4 +472,3 @@ async function calculateSimulatedTiebreakers(
     correctAdvances,
   };
 }
-

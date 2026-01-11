@@ -38,8 +38,8 @@ export class StandingsController extends BaseController {
         groupLetters = Array.isArray(groupParam)
           ? groupParam.filter((g): g is string => typeof g === 'string')
           : typeof groupParam === 'string'
-          ? [groupParam]
-          : undefined;
+            ? [groupParam]
+            : undefined;
 
         if (!groupLetters || groupLetters.length === 0) {
           return this.badRequest(res, 'Invalid group parameter format');
@@ -114,7 +114,10 @@ export class StandingsController extends BaseController {
       const standings = await GroupStandingModel.findByGroup(groupLetter);
 
       if (standings.length === 0) {
-        return this.notFound(res, `No standings found for group ${groupLetter}`);
+        return this.notFound(
+          res,
+          `No standings found for group ${groupLetter}`
+        );
       }
 
       logger.info(
@@ -158,4 +161,3 @@ export class StandingsController extends BaseController {
     }
   };
 }
-

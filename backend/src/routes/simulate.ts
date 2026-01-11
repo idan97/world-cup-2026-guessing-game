@@ -9,7 +9,11 @@ const simulationController = new SimulationController();
  * POST /simulate/calculate
  * חישוב סימולציה כללית (מקבל leagueId בגוף הבקשה)
  */
-router.post('/calculate', requireAuth, simulationController.calculateSimulation);
+router.post(
+  '/calculate',
+  requireAuth,
+  simulationController.calculateSimulation
+);
 
 /**
  * POST /simulate/league/:id/calculate
@@ -44,4 +48,3 @@ router.get('/my', requireAuth, simulationController.getMySimulation);
 router.put('/my', requireAuth, simulationController.saveMySimulation);
 
 export default router;
-

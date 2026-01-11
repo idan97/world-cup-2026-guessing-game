@@ -21,4 +21,3 @@ router.post('/advances', controller.createAdvancePredictions);
 router.post('/top-scorer', controller.createTopScorerPrediction);
 
 export default router;
-

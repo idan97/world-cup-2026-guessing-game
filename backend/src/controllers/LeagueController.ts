@@ -4,7 +4,10 @@ import { z } from 'zod';
 import { LeagueModel } from '../models/League';
 import { LeagueRole } from '@prisma/client';
 import logger from '../logger';
-import { calculateTotalScore, calculateTiebreakers } from '../services/ScoringService';
+import {
+  calculateTotalScore,
+  calculateTiebreakers,
+} from '../services/ScoringService';
 import { TournamentSettingsService } from '../services/TournamentSettingsService';
 import prisma from '../db';
 
@@ -320,7 +323,8 @@ export class LeagueController extends BaseController {
       const leagueId = req.league!.id;
 
       // Get the actual top scorer from tournament settings
-      const actualTopScorer = await TournamentSettingsService.getActualTopScorer();
+      const actualTopScorer =
+        await TournamentSettingsService.getActualTopScorer();
 
       // Get all members of the league
       const members = await prisma.leagueMember.findMany({
@@ -353,7 +357,10 @@ export class LeagueController extends BaseController {
         const scoreData = await calculateTotalScore(form.id, actualTopScorer);
 
         // Calculate tiebreaker statistics
-        const tiebreakers = await calculateTiebreakers(form.id, actualTopScorer);
+        const tiebreakers = await calculateTiebreakers(
+          form.id,
+          actualTopScorer
+        );
 
         leaderboardEntries.push({
           userId: member.userId,
@@ -385,7 +392,9 @@ export class LeagueController extends BaseController {
 
         // 3. Correct decisions (descending)
         if (a.tiebreakers.correctDecisions !== b.tiebreakers.correctDecisions) {
-          return b.tiebreakers.correctDecisions - a.tiebreakers.correctDecisions;
+          return (
+            b.tiebreakers.correctDecisions - a.tiebreakers.correctDecisions
+          );
         }
 
         // 4. Correct champion

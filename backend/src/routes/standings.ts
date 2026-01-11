@@ -16,4 +16,3 @@ router.get('/', controller.getAllStandings);
 router.get('/:groupLetter', controller.getGroupStandings);
 
 export default router;
-

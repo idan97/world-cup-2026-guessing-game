@@ -18,4 +18,3 @@ router.get('/stage/:stage', controller.getMatchesByStage);
 router.get('/:id', controller.getMatchById);
 
 export default router;
-

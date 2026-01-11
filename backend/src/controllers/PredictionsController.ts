@@ -45,7 +45,11 @@ export class PredictionsController extends BaseController {
     try {
       const result = bulkMatchPredictionsSchema.safeParse(req.body);
       if (!result.success) {
-        return this.badRequest(res, 'Invalid predictions data', result.error.errors);
+        return this.badRequest(
+          res,
+          'Invalid predictions data',
+          result.error.errors
+        );
       }
 
       const userId = req.auth.userId;
@@ -115,7 +119,10 @@ export class PredictionsController extends BaseController {
         count: matchPicks.length,
       });
     } catch (error) {
-      logger.error({ error, userId: req.auth.userId }, 'Error saving match predictions');
+      logger.error(
+        { error, userId: req.auth.userId },
+        'Error saving match predictions'
+      );
       return this.internalError(res, error);
     }
   };
@@ -131,7 +138,11 @@ export class PredictionsController extends BaseController {
     try {
       const result = advancePredictionsSchema.safeParse(req.body);
       if (!result.success) {
-        return this.badRequest(res, 'Invalid predictions data', result.error.errors);
+        return this.badRequest(
+          res,
+          'Invalid predictions data',
+          result.error.errors
+        );
       }
 
       const userId = req.auth.userId;
@@ -151,7 +162,9 @@ export class PredictionsController extends BaseController {
       }
 
       // Validate all team IDs exist
-      const teamIds = [...new Set(result.data.predictions.map((p) => p.teamId))];
+      const teamIds = [
+        ...new Set(result.data.predictions.map((p) => p.teamId)),
+      ];
       const teams = await prisma.team.findMany({
         where: {
           id: {
@@ -194,7 +207,10 @@ export class PredictionsController extends BaseController {
         count: advancePicks.length,
       });
     } catch (error) {
-      logger.error({ error, userId: req.auth.userId }, 'Error saving advance predictions');
+      logger.error(
+        { error, userId: req.auth.userId },
+        'Error saving advance predictions'
+      );
       return this.internalError(res, error);
     }
   };
@@ -210,7 +226,11 @@ export class PredictionsController extends BaseController {
     try {
       const result = topScorerPredictionSchema.safeParse(req.body);
       if (!result.success) {
-        return this.badRequest(res, 'Invalid prediction data', result.error.errors);
+        return this.badRequest(
+          res,
+          'Invalid prediction data',
+          result.error.errors
+        );
       }
 
       const userId = req.auth.userId;
@@ -253,7 +273,10 @@ export class PredictionsController extends BaseController {
         playerName: result.data.playerName,
       });
     } catch (error) {
-      logger.error({ error, userId: req.auth.userId }, 'Error saving top scorer prediction');
+      logger.error(
+        { error, userId: req.auth.userId },
+        'Error saving top scorer prediction'
+      );
       return this.internalError(res, error);
     }
   };
@@ -288,9 +311,11 @@ export class PredictionsController extends BaseController {
 
       return this.success(res, formWithPicks);
     } catch (error) {
-      logger.error({ error, userId: req.auth.userId }, 'Error fetching user predictions');
+      logger.error(
+        { error, userId: req.auth.userId },
+        'Error fetching user predictions'
+      );
       return this.internalError(res, error);
     }
   };
 }
-

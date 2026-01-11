@@ -6,9 +6,7 @@ export class GroupStandingModel {
    * Get all group standings, optionally filtered by group letters
    * @param groupLetters - Array of group letters (e.g., ['A', 'B']) or undefined for all
    */
-  static async findByGroups(
-    groupLetters?: string[]
-  ): Promise<GroupStanding[]> {
+  static async findByGroups(groupLetters?: string[]): Promise<GroupStanding[]> {
     const query: any = {
       include: {
         team: true,
@@ -42,11 +40,7 @@ export class GroupStandingModel {
       include: {
         team: true,
       },
-      orderBy: [
-        { points: 'desc' },
-        { goalDiff: 'desc' },
-        { goalsFor: 'desc' },
-      ],
+      orderBy: [{ points: 'desc' }, { goalDiff: 'desc' }, { goalsFor: 'desc' }],
     });
   }
 
@@ -100,4 +94,3 @@ export class GroupStandingModel {
     });
   }
 }
-
