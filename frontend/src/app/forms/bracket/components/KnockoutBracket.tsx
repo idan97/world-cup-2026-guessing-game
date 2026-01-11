@@ -1,7 +1,7 @@
 'use client';
 
 import KnockoutMatch from './KnockoutMatch';
-import type { MatchDisplay, Team } from '../types';
+import type { MatchDisplay } from '../types';
 import { STAGE_CONFIG } from '../types';
 
 interface KnockoutBracketProps {
@@ -164,15 +164,19 @@ function KnockoutRound({
       <h3 className="text-lg font-bold text-slate-800 mb-3 flex items-center gap-2">
         <span className="text-xl">{colorIcon[color] || '⚽'}</span>
         {title}
-        <span className="text-sm font-normal text-slate-500">({matches.length} משחקים)</span>
+        <span className="text-sm font-normal text-slate-500">
+          ({matches.length} משחקים)
+        </span>
       </h3>
-      <div className={`grid gap-3 ${
-        columns === 4 
-          ? 'grid-cols-2 md:grid-cols-4' 
-          : columns === 2 
-          ? 'grid-cols-1 md:grid-cols-2 max-w-2xl' 
-          : 'grid-cols-1 max-w-md'
-      }`}>
+      <div
+        className={`grid gap-3 ${
+          columns === 4
+            ? 'grid-cols-2 md:grid-cols-4'
+            : columns === 2
+              ? 'grid-cols-1 md:grid-cols-2 max-w-2xl'
+              : 'grid-cols-1 max-w-md'
+        }`}
+      >
         {matches.map((match, idx) => (
           <KnockoutMatch
             key={match.match?.id || `${title}-${idx}`}
@@ -189,4 +193,3 @@ function KnockoutRound({
     </div>
   );
 }
-

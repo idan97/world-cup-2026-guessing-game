@@ -622,6 +622,7 @@ export default function BracketFormPage() {
     if (allGroupMatchesFilled && !calculatedBracket) {
       calculateKnockoutBracket();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allGroupMatchesFilled]);
 
   const calculateKnockoutBracket = async () => {
@@ -1039,7 +1040,7 @@ export default function BracketFormPage() {
       const predictions = Array.from(matchPredictions.values());
       const picksToSave: {
         matchPicks?: Array<{
-          matchId: string;
+          matchId: number;
           predScoreA: number;
           predScoreB: number;
           predOutcome: 'W' | 'D' | 'L';
@@ -1047,18 +1048,27 @@ export default function BracketFormPage() {
         topScorerPicks?: Array<{ playerName: string }>;
       } = {};
 
-      if (predictions.length > 0) {
-        picksToSave.matchPicks = predictions.map((p) => ({
-          matchId: p.matchId,
-          predScoreA: p.predScoreA,
-          predScoreB: p.predScoreB,
-          predOutcome:
-            p.predScoreA > p.predScoreB
-              ? 'W'
-              : p.predScoreA < p.predScoreB
-              ? 'L'
-              : 'D',
-        }));
+      if (predictions.length > 0 && allMatches) {
+        picksToSave.matchPicks = predictions
+          .map((p) => {
+            const match = allMatches.find((m) => m.id === p.matchId);
+            if (!match) {
+              return null;
+            }
+            const predOutcome: 'W' | 'D' | 'L' =
+              p.predScoreA > p.predScoreB
+                ? 'W'
+                : p.predScoreA < p.predScoreB
+                ? 'L'
+                : 'D';
+            return {
+              matchId: match.matchNumber,
+              predScoreA: p.predScoreA,
+              predScoreB: p.predScoreB,
+              predOutcome,
+            };
+          })
+          .filter((p) => p !== null);
       }
 
       if (topScorer.trim()) {

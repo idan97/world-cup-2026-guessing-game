@@ -57,28 +57,32 @@ export function useApi() {
   );
 
   // Predictions API (now using Forms API)
+  // NOTE: matchId should be matchNumber (number), not match database ID (string)
   const saveMatchPredictions = useCallback(
     async (
       formId: string,
       predictions: Array<{
-        matchId: string;
+        matchId: number;
         predScoreA: number;
         predScoreB: number;
       }>
     ) => {
       const api = await getAuthenticatedApi();
       return api.savePicks(formId, {
-        matchPicks: predictions.map((p) => ({
-          matchId: p.matchId,
-          predScoreA: p.predScoreA,
-          predScoreB: p.predScoreB,
-          predOutcome:
+        matchPicks: predictions.map((p) => {
+          const predOutcome: 'W' | 'D' | 'L' =
             p.predScoreA > p.predScoreB
               ? 'W'
               : p.predScoreA < p.predScoreB
               ? 'L'
-              : 'D',
-        })),
+              : 'D';
+          return {
+            matchId: p.matchId,
+            predScoreA: p.predScoreA,
+            predScoreB: p.predScoreB,
+            predOutcome,
+          };
+        }),
       });
     },
     [getAuthenticatedApi]

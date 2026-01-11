@@ -3,27 +3,25 @@
 import { useState } from 'react';
 import useSWR from 'swr';
 import { apiUrls } from '../../lib/api';
-import { useLeague } from '../../lib/useLeague';
 import { useApi } from '../../lib/useApi';
 import type { FormDraft } from '../../lib/types';
 
 export default function FormExample() {
-  const { leagueId } = useLeague();
   const api = useApi();
   const [isSaving, setIsSaving] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState('');
 
   // Use SWR to fetch the user's form data (fetcher provided by SWRConfig)
-  const { data: formData, mutate } = useSWR<FormDraft>(
-    apiUrls.myForm(),
-    { shouldRetryOnError: false, errorRetryCount: 0 }
-  );
+  const { data: formData, mutate } = useSWR<FormDraft>(apiUrls.myForm(), {
+    shouldRetryOnError: false,
+    errorRetryCount: 0,
+  });
 
   // Save form draft using direct API call
   const handleSave = async () => {
-    if (!formData?.id) return;
-    
+    if (!formData?.id) {return;}
+
     setIsSaving(true);
     setMessage('');
 
@@ -31,15 +29,19 @@ export default function FormExample() {
       await api.savePicks(formData.id, {
         matchPicks: [],
         advancePicks: [],
-        topScorerPicks: formData?.topScorer ? [{ playerName: formData.topScorer }] : [],
+        topScorerPicks: formData?.topScorer
+          ? [{ playerName: formData.topScorer }]
+          : [],
       });
-      
+
       // Refresh the form data after saving
       await mutate();
-      
+
       setMessage('Form saved successfully!');
     } catch (error) {
-      setMessage(`Error saving form: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setMessage(
+        `Error saving form: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
     } finally {
       setIsSaving(false);
     }
@@ -47,9 +49,13 @@ export default function FormExample() {
 
   // Submit final form using direct API call
   const handleSubmit = async () => {
-    if (!formData?.id) return;
-    
-    if (!confirm('Are you sure you want to submit your final predictions? This cannot be undone.')) {
+    if (!formData?.id) {return;}
+
+    if (
+      !confirm(
+        'Are you sure you want to submit your final predictions? This cannot be undone.',
+      )
+    ) {
       return;
     }
 
@@ -58,13 +64,15 @@ export default function FormExample() {
 
     try {
       await api.submitForm(formData.id);
-      
+
       // Refresh the form data after submitting
       await mutate();
-      
+
       setMessage('Form submitted successfully!');
     } catch (error) {
-      setMessage(`Error submitting form: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setMessage(
+        `Error submitting form: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -84,20 +92,23 @@ export default function FormExample() {
   return (
     <div className="p-4 bg-white rounded-lg shadow">
       <h3 className="text-lg font-semibold mb-4">Form Example</h3>
-      
+
       <div className="space-y-4">
         <div>
           <p className="text-sm text-gray-600">Form ID: {formData.id}</p>
-          <p className="text-sm text-gray-600">League: {formData.leagueId}</p>
-          <p className="text-sm text-gray-600">Status: {formData.isFinal ? 'Final' : 'Draft'}</p>
+          <p className="text-sm text-gray-600">
+            Status: {formData.isFinal ? 'Final' : 'Draft'}
+          </p>
         </div>
 
         {message && (
-          <div className={`p-3 rounded text-sm ${
-            message.includes('Error') 
-              ? 'bg-red-100 text-red-700' 
-              : 'bg-green-100 text-green-700'
-          }`}>
+          <div
+            className={`p-3 rounded text-sm ${
+              message.includes('Error')
+                ? 'bg-red-100 text-red-700'
+                : 'bg-green-100 text-green-700'
+            }`}
+          >
             {message}
           </div>
         )}
@@ -122,4 +133,4 @@ export default function FormExample() {
       </div>
     </div>
   );
-} 
+}

@@ -9,7 +9,11 @@ import LeaderboardCard from '../../components/LeaderboardCard';
 import NextFixturesCard from '../../components/NextFixturesCard';
 import RulesCard from '../../components/RulesCard';
 import CTAButtons from '../../components/CTAButtons';
-import type { LeaderboardEntry, NextMatch, FormDraft } from '../../../lib/types';
+import type {
+  LeaderboardEntry,
+  NextMatch,
+  FormDraft,
+} from '../../../lib/types';
 
 export default function HomePage() {
   const { user, isLoaded } = useUser();
@@ -18,18 +22,18 @@ export default function HomePage() {
   // fetcher is provided globally by SWRConfig in Providers
   const { data: leaderboard } = useSWR<LeaderboardEntry[]>(
     user ? apiUrls.leaderboard(leagueId, 10) : null,
-    { shouldRetryOnError: false, errorRetryCount: 0 }
+    { shouldRetryOnError: false, errorRetryCount: 0 },
   );
 
   const { data: fixtures } = useSWR<NextMatch[]>(
     user ? apiUrls.nextMatches(user.id, '2d') : null,
-    { shouldRetryOnError: false, errorRetryCount: 0 }
+    { shouldRetryOnError: false, errorRetryCount: 0 },
   );
 
-  const { data: userForm } = useSWR<FormDraft>(
-    user ? apiUrls.myForm() : null,
-    { shouldRetryOnError: false, errorRetryCount: 0 }
-  );
+  const { data: userForm } = useSWR<FormDraft>(user ? apiUrls.myForm() : null, {
+    shouldRetryOnError: false,
+    errorRetryCount: 0,
+  });
 
   if (!isLoaded) {
     return (
@@ -45,7 +49,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      
+
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="mb-8">
@@ -53,7 +57,8 @@ export default function HomePage() {
             🏆 World Cup 2026 Dashboard
           </h1>
           <p className="text-gray-600">
-            Welcome back, {user?.firstName || 'Player'}! Current league: <span className="font-medium">{leagueId}</span>
+            Welcome back, {user?.firstName || 'Player'}! Current league:{' '}
+            <span className="font-medium">{leagueId}</span>
           </p>
         </div>
 
@@ -62,7 +67,7 @@ export default function HomePage() {
           <LeaderboardCard data={leaderboard || []} currentUserId={user?.id} />
           <NextFixturesCard data={fixtures || []} />
           <RulesCard />
-          
+
           {/* CTA buttons span full width */}
           <div className="md:col-span-3">
             <CTAButtons formId={userForm?.id} />
@@ -73,8 +78,16 @@ export default function HomePage() {
         <div className="mt-8 bg-green-50 border border-green-200 rounded-lg p-4">
           <div className="flex">
             <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              <svg
+                className="h-5 w-5 text-green-400"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                  clipRule="evenodd"
+                />
               </svg>
             </div>
             <div className="ml-3">
@@ -83,7 +96,9 @@ export default function HomePage() {
               </h3>
               <div className="mt-2 text-sm text-green-700">
                 <p>
-                  Your dashboard is now league-aware and ready for predictions. You&apos;re viewing data for the <strong>{leagueId}</strong> league.
+                  Your dashboard is now league-aware and ready for predictions.
+                  You&apos;re viewing data for the <strong>{leagueId}</strong>{' '}
+                  league.
                 </p>
               </div>
             </div>
@@ -92,4 +107,4 @@ export default function HomePage() {
       </main>
     </div>
   );
-} 
+}

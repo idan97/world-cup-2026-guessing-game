@@ -3,7 +3,7 @@
 const apiCall = async (
   url: string,
   options: RequestInit = {},
-  token?: string
+  token?: string,
 ) => {
   const response = await fetch(`${process.env.NEXT_PUBLIC_API}${url}`, {
     credentials: 'include',
@@ -15,7 +15,9 @@ const apiCall = async (
     ...options,
   });
 
-  if (!response.ok) throw new Error(`API Error: ${response.status}`);
+  if (!response.ok) {
+    throw new Error(`API Error: ${response.status}`);
+  }
 
   const json = await response.json();
   // API returns { success, message, data } - extract the data
@@ -32,7 +34,7 @@ export const http = {
         method: 'POST',
         body: data ? JSON.stringify(data) : undefined,
       },
-      token
+      token,
     ),
   put: (url: string, data?: unknown, token?: string) =>
     apiCall(
@@ -41,7 +43,7 @@ export const http = {
         method: 'PUT',
         body: data ? JSON.stringify(data) : undefined,
       },
-      token
+      token,
     ),
   delete: (url: string, token?: string) =>
     apiCall(url, { method: 'DELETE' }, token),
@@ -71,7 +73,7 @@ export const createAuthenticatedApi = (token: string) => ({
         teamId: string;
       }>;
       topScorerPicks?: Array<{ playerName: string }>;
-    }
+    },
   ) => {
     const response = await http.post(
       '/forms',
@@ -79,7 +81,7 @@ export const createAuthenticatedApi = (token: string) => ({
         nickname,
         ...(picks || {}),
       },
-      token
+      token,
     );
     return response;
   },
@@ -99,7 +101,7 @@ export const createAuthenticatedApi = (token: string) => ({
         teamId: string;
       }>;
       topScorerPicks?: Array<{ playerName: string }>;
-    }
+    },
   ) => {
     const response = await http.put(`/forms/${formId}/picks`, picks, token);
     return response;
@@ -110,7 +112,7 @@ export const createAuthenticatedApi = (token: string) => ({
     const response = await http.post(
       `/forms/${formId}/submit`,
       undefined,
-      token
+      token,
     );
     return response;
   },
@@ -121,12 +123,12 @@ export const createAuthenticatedApi = (token: string) => ({
       matchId: string;
       team1Score: number;
       team2Score: number;
-    }>
+    }>,
   ) => {
     const response = await http.post(
       '/bracket/calculate',
       { matchResults },
-      token
+      token,
     );
     return response;
   },
@@ -144,9 +146,15 @@ export const predictionsApi = {
     limit?: number;
   }) => {
     const query = new URLSearchParams();
-    if (params?.stage) query.append('stage', params.stage);
-    if (params?.group) query.append('group', params.group);
-    if (params?.limit) query.append('limit', params.limit.toString());
+    if (params?.stage) {
+      query.append('stage', params.stage);
+    }
+    if (params?.group) {
+      query.append('group', params.group);
+    }
+    if (params?.limit) {
+      query.append('limit', params.limit.toString());
+    }
     const queryString = query.toString();
     return http.get(`/matches${queryString ? `?${queryString}` : ''}`);
   },
@@ -160,28 +168,32 @@ export const predictionsApi = {
   },
 
   // Save match predictions (using Forms API - requires formId and token)
+  // NOTE: matchId should be matchNumber (number), not match database ID (string)
   saveMatchPredictions: async (
     formId: string,
     predictions: Array<{
-      matchId: string;
+      matchId: number;
       predScoreA: number;
       predScoreB: number;
     }>,
-    token: string
+    token: string,
   ) => {
     const api = createAuthenticatedApi(token);
     return api.savePicks(formId, {
-      matchPicks: predictions.map((p) => ({
-        matchId: p.matchId,
-        predScoreA: p.predScoreA,
-        predScoreB: p.predScoreB,
-        predOutcome:
+      matchPicks: predictions.map((p) => {
+        const predOutcome: 'W' | 'D' | 'L' =
           p.predScoreA > p.predScoreB
             ? 'W'
             : p.predScoreA < p.predScoreB
             ? 'L'
-            : 'D',
-      })),
+            : 'D';
+        return {
+          matchId: p.matchId,
+          predScoreA: p.predScoreA,
+          predScoreB: p.predScoreB,
+          predOutcome,
+        };
+      }),
     });
   },
 
@@ -192,7 +204,7 @@ export const predictionsApi = {
       stage: 'R32' | 'R16' | 'QF' | 'SF' | 'F';
       teamId: string;
     }>,
-    token: string
+    token: string,
   ) => {
     const api = createAuthenticatedApi(token);
     return api.savePicks(formId, {
@@ -223,8 +235,12 @@ export const apiUrls = {
     formId ? `/forms/${formId}/with-picks` : null,
   matches: (params?: { stage?: string; group?: string }) => {
     const query = new URLSearchParams();
-    if (params?.stage) query.append('stage', params.stage);
-    if (params?.group) query.append('group', params.group);
+    if (params?.stage) {
+      query.append('stage', params.stage);
+    }
+    if (params?.group) {
+      query.append('group', params.group);
+    }
     return `/matches${query.toString() ? `?${query}` : ''}`;
   },
   standings: () => '/standings',

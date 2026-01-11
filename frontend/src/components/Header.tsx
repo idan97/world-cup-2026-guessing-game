@@ -4,8 +4,6 @@ import { UserButton, useUser } from '@clerk/nextjs';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import LeagueSwitcher from './LeagueSwitcher';
-;
-
 export default function Header() {
   const { user } = useUser();
   const pathname = usePathname();
@@ -68,4 +66,4 @@ export default function Header() {
       </div>
     </header>
   );
-} 
+}

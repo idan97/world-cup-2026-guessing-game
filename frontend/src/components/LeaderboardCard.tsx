@@ -50,4 +50,4 @@ export default function LeaderboardCard({
       </div>
     </div>
   );
-} 
+}

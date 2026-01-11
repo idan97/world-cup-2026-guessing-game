@@ -9,19 +9,37 @@ import KnockoutBracket from '../forms/bracket/components/KnockoutBracket';
 import { http } from '../../../lib/api';
 import { useAuth } from '@clerk/nextjs';
 import { useLeague } from '../../../lib/useLeague';
-import type { 
-  GroupDisplay, 
-  MatchDisplay, 
-  MatchPrediction, 
-  MatchData, 
-  Team, 
+import type {
+  GroupDisplay,
+  MatchDisplay,
+  MatchPrediction,
+  MatchData,
+  Team,
 } from '../forms/bracket/types';
 
 // Groups list
-const GROUPS_LIST = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'] as const;
+const GROUPS_LIST = [
+  'A',
+  'B',
+  'C',
+  'D',
+  'E',
+  'F',
+  'G',
+  'H',
+  'I',
+  'J',
+  'K',
+  'L',
+] as const;
 
 // R32 mapping based on FIFA World Cup 2026 format
-const R32_MAPPING: Array<{ match: number; team1: string; team2: string; thirdPlaceCode?: string }> = [
+const R32_MAPPING: Array<{
+  match: number;
+  team1: string;
+  team2: string;
+  thirdPlaceCode?: string;
+}> = [
   { match: 73, team1: '2A', team2: '2B' },
   { match: 74, team1: '1E', team2: '3rd', thirdPlaceCode: '3-ABCDF' },
   { match: 75, team1: '1F', team2: '2C' },
@@ -44,34 +62,74 @@ const R32_MAPPING: Array<{ match: number; team1: string; team2: string; thirdPla
 type ThirdPlaceAssignments = Record<number, string>;
 
 function calculateThirdPlaceAssignments(
-  thirdPlaceTeams: Array<{ groupLetter: string; points: number; goalDiff: number; goalsFor: number }>
+  thirdPlaceTeams: Array<{
+    groupLetter: string;
+    points: number;
+    goalDiff: number;
+    goalsFor: number;
+  }>,
 ): { qualifiedGroups: string[]; assignments: ThirdPlaceAssignments } | null {
-  if (thirdPlaceTeams.length !== 12) return null;
-  
+  if (thirdPlaceTeams.length !== 12) {
+    return null;
+  }
+
   const sorted = [...thirdPlaceTeams].sort((a, b) => {
-    if (a.points !== b.points) return b.points - a.points;
-    if (a.goalDiff !== b.goalDiff) return b.goalDiff - a.goalDiff;
+    if (a.points !== b.points) {
+      return b.points - a.points;
+    }
+    if (a.goalDiff !== b.goalDiff) {
+      return b.goalDiff - a.goalDiff;
+    }
     return b.goalsFor - a.goalsFor;
   });
-  
-  const qualifiedGroups = sorted.slice(0, 8).map(t => t.groupLetter);
+
+  const qualifiedGroups = sorted.slice(0, 8).map((t) => t.groupLetter);
   const combinationKey = [...qualifiedGroups].sort().join('');
   const assignments = getThirdPlaceAssignmentsForCombination(combinationKey);
-  
+
   return { qualifiedGroups, assignments };
 }
 
-function getThirdPlaceAssignmentsForCombination(combination: string): ThirdPlaceAssignments {
+function getThirdPlaceAssignmentsForCombination(
+  combination: string,
+): ThirdPlaceAssignments {
   const lookupTable: Record<string, ThirdPlaceAssignments> = {
-    'ABCDEFGH': { 74: 'G', 77: 'F', 79: 'H', 80: 'E', 81: 'B', 82: 'A', 85: 'C', 87: 'D' },
-    'ABCDEFGI': { 74: 'G', 77: 'F', 79: 'I', 80: 'E', 81: 'B', 82: 'A', 85: 'C', 87: 'D' },
-    'EFGHIJKL': { 74: 'J', 77: 'G', 79: 'E', 80: 'K', 81: 'I', 82: 'H', 85: 'F', 87: 'L' },
+    ABCDEFGH: {
+      74: 'G',
+      77: 'F',
+      79: 'H',
+      80: 'E',
+      81: 'B',
+      82: 'A',
+      85: 'C',
+      87: 'D',
+    },
+    ABCDEFGI: {
+      74: 'G',
+      77: 'F',
+      79: 'I',
+      80: 'E',
+      81: 'B',
+      82: 'A',
+      85: 'C',
+      87: 'D',
+    },
+    EFGHIJKL: {
+      74: 'J',
+      77: 'G',
+      79: 'E',
+      80: 'K',
+      81: 'I',
+      82: 'H',
+      85: 'F',
+      87: 'L',
+    },
   };
-  
+
   if (lookupTable[combination]) {
     return lookupTable[combination];
   }
-  
+
   // Fallback
   const groups = combination.split('');
   const thirdPlaceMatches = [74, 77, 79, 80, 81, 82, 85, 87];
@@ -83,7 +141,10 @@ function getThirdPlaceAssignmentsForCombination(combination: string): ThirdPlace
 }
 
 // Scoring matrix for local calculation
-const SCORING_MATRIX: Record<string, { decision: number; exactResult: number }> = {
+const SCORING_MATRIX: Record<
+  string,
+  { decision: number; exactResult: number }
+> = {
   GROUP: { decision: 1, exactResult: 3 },
   R32: { decision: 3, exactResult: 3 },
   R16: { decision: 3, exactResult: 3 },
@@ -111,21 +172,24 @@ interface LeaguePredictionsResponse {
 }
 
 interface StandingsResponse {
-  groups: Record<string, Array<{
-    id: string;
-    groupLetter: string;
-    position: number;
-    teamId: string | null;
-    played: number;
-    wins: number;
-    draws: number;
-    losses: number;
-    goalsFor: number;
-    goalsAgainst: number;
-    goalDiff: number;
-    points: number;
-    team: Team | null;
-  }>>;
+  groups: Record<
+    string,
+    Array<{
+      id: string;
+      groupLetter: string;
+      position: number;
+      teamId: string | null;
+      played: number;
+      wins: number;
+      draws: number;
+      losses: number;
+      goalsFor: number;
+      goalsAgainst: number;
+      goalDiff: number;
+      points: number;
+      team: Team | null;
+    }>
+  >;
   metadata: {
     groupsIncluded: string[];
     totalGroups: number;
@@ -146,50 +210,56 @@ export default function SimulatePage() {
   const { isLoaded } = useUser();
   const { getToken } = useAuth();
   const { leagueId } = useLeague();
-  
+
   // State for simulated results
-  const [simulatedResults, setSimulatedResults] = useState<Map<string, MatchPrediction>>(new Map());
-  const [winnerSelections, setWinnerSelections] = useState<Map<string, string>>(new Map());
+  const [simulatedResults, setSimulatedResults] = useState<
+    Map<string, MatchPrediction>
+  >(new Map());
+  const [winnerSelections, setWinnerSelections] = useState<Map<string, string>>(
+    new Map(),
+  );
   const [topScorerName, setTopScorerName] = useState<string>('');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [isLoadingSimulation, setIsLoadingSimulation] = useState(true);
-  
+
   // Refs for debouncing
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Fetch data using SWR
-  const { data: standingsData, error: standingsError } = useSWR<StandingsResponse>(
-    '/standings',
-    { 
+  const { data: standingsData, error: standingsError } =
+    useSWR<StandingsResponse>('/standings', {
       revalidateOnFocus: false,
       shouldRetryOnError: false,
       errorRetryCount: 0,
-    }
-  );
+    });
 
   const { data: allMatches, error: matchesError } = useSWR<MatchData[]>(
     '/matches',
-    { 
+    {
       revalidateOnFocus: false,
       shouldRetryOnError: false,
       errorRetryCount: 0,
-    }
+    },
   );
 
   // Fetch all league predictions once
-  const { data: leaguePredictions, error: predictionsError, isLoading: isLoadingPredictions } = useSWR<LeaguePredictionsResponse>(
+  const {
+    data: leaguePredictions,
+    error: predictionsError,
+    isLoading: isLoadingPredictions,
+  } = useSWR<LeaguePredictionsResponse>(
     leagueId ? `/simulate/league/${leagueId}/all-predictions` : null,
     async (url: string) => {
       const token = await getToken();
       return http.get(url, token || '');
     },
-    { 
+    {
       revalidateOnFocus: false,
       shouldRetryOnError: false,
       errorRetryCount: 0,
-    }
+    },
   );
 
   // Load saved simulation on mount
@@ -203,19 +273,27 @@ export default function SimulatePage() {
           return;
         }
 
-        const response = await http.get('/simulate/my', token) as { simulation: { results: Record<string, { predScoreA: number; predScoreB: number }>; topScorer: string | null; updatedAt: string } | null };
-        
+        const response = (await http.get('/simulate/my', token)) as {
+          simulation: {
+            results: Record<string, { predScoreA: number; predScoreB: number }>;
+            topScorer: string | null;
+            updatedAt: string;
+          } | null;
+        };
+
         if (response.simulation && response.simulation.results) {
           // Convert results object to Map
           const resultsMap = new Map<string, MatchPrediction>();
-          Object.entries(response.simulation.results).forEach(([matchId, pred]) => {
-            resultsMap.set(matchId, {
-              matchId,
-              predScoreA: pred.predScoreA,
-              predScoreB: pred.predScoreB,
-            });
-          });
-          
+          Object.entries(response.simulation.results).forEach(
+            ([matchId, pred]) => {
+              resultsMap.set(matchId, {
+                matchId,
+                predScoreA: pred.predScoreA,
+                predScoreB: pred.predScoreB,
+              });
+            },
+          );
+
           setSimulatedResults(resultsMap);
           setTopScorerName(response.simulation.topScorer || '');
           setLastSaved(new Date(response.simulation.updatedAt));
@@ -237,10 +315,15 @@ export default function SimulatePage() {
     try {
       setIsSaving(true);
       const token = await getToken();
-      if (!token) return;
+      if (!token) {
+        return;
+      }
 
       // Convert Map to object
-      const resultsObject: Record<string, { predScoreA: number; predScoreB: number }> = {};
+      const resultsObject: Record<
+        string,
+        { predScoreA: number; predScoreB: number }
+      > = {};
       simulatedResults.forEach((pred, matchId) => {
         resultsObject[matchId] = {
           predScoreA: pred.predScoreA,
@@ -254,7 +337,7 @@ export default function SimulatePage() {
           results: resultsObject,
           topScorer: topScorerName || null,
         },
-        token
+        token,
       );
 
       setLastSaved(new Date());
@@ -296,7 +379,7 @@ export default function SimulatePage() {
   const matchStageMap = useMemo(() => {
     const map = new Map<string, string>();
     if (allMatches) {
-      allMatches.forEach(m => map.set(m.id, m.stage));
+      allMatches.forEach((m) => map.set(m.id, m.stage));
     }
     return map;
   }, [allMatches]);
@@ -307,85 +390,101 @@ export default function SimulatePage() {
       return [];
     }
 
-    const entries: RealtimeLeaderboardEntry[] = leaguePredictions.forms.map(form => {
-      let matchPoints = 0;
-      let exactResults = 0;
-      let correctDecisions = 0;
-      let topScorerPoints = 0;
+    const entries: RealtimeLeaderboardEntry[] = leaguePredictions.forms.map(
+      (form) => {
+        let matchPoints = 0;
+        let exactResults = 0;
+        let correctDecisions = 0;
+        let topScorerPoints = 0;
 
-      // Calculate match scores
-      form.predictions.forEach(pred => {
-        const simulated = simulatedResults.get(pred.matchId);
-        if (!simulated) return;
+        // Calculate match scores
+        form.predictions.forEach((pred) => {
+          const simulated = simulatedResults.get(pred.matchId);
+          if (!simulated) {
+            return;
+          }
 
-        const stage = matchStageMap.get(pred.matchId) || 'GROUP';
-        const scoring = SCORING_MATRIX[stage] || SCORING_MATRIX.GROUP;
+          const stage = matchStageMap.get(pred.matchId) || 'GROUP';
+          const scoring = SCORING_MATRIX[stage] || SCORING_MATRIX.GROUP;
 
-        // Get simulated outcome
-        let simulatedOutcome: string;
-        if (simulated.predScoreA > simulated.predScoreB) {
-          simulatedOutcome = 'W';
-        } else if (simulated.predScoreA < simulated.predScoreB) {
-          simulatedOutcome = 'L';
-        } else {
-          simulatedOutcome = 'D';
-        }
+          // Get simulated outcome
+          let simulatedOutcome: string;
+          if (simulated.predScoreA > simulated.predScoreB) {
+            simulatedOutcome = 'W';
+          } else if (simulated.predScoreA < simulated.predScoreB) {
+            simulatedOutcome = 'L';
+          } else {
+            simulatedOutcome = 'D';
+          }
 
-        // Check if predicted outcome matches
-        if (pred.predOutcome === simulatedOutcome) {
-          correctDecisions++;
-          matchPoints += scoring.decision;
+          // Check if predicted outcome matches
+          if (pred.predOutcome === simulatedOutcome) {
+            correctDecisions++;
+            matchPoints += scoring.decision;
 
-          // Check for exact score
-          if (pred.predScoreA === simulated.predScoreA && pred.predScoreB === simulated.predScoreB) {
-            exactResults++;
-            matchPoints += scoring.exactResult;
+            // Check for exact score
+            if (
+              pred.predScoreA === simulated.predScoreA &&
+              pred.predScoreB === simulated.predScoreB
+            ) {
+              exactResults++;
+              matchPoints += scoring.exactResult;
+            }
+          }
+        });
+
+        // Check top scorer
+        if (topScorerName && form.topScorerName) {
+          const predicted = form.topScorerName.trim().toLowerCase();
+          const actual = topScorerName.trim().toLowerCase();
+          if (predicted === actual) {
+            topScorerPoints = 8;
           }
         }
-      });
 
-      // Check top scorer
-      if (topScorerName && form.topScorerName) {
-        const predicted = form.topScorerName.trim().toLowerCase();
-        const actual = topScorerName.trim().toLowerCase();
-        if (predicted === actual) {
-          topScorerPoints = 8;
-        }
-      }
-
-      return {
-        formId: form.formId,
-        nickname: form.nickname,
-        totalPoints: matchPoints + topScorerPoints,
-        matchPoints,
-        exactResults,
-        correctDecisions,
-        topScorerPoints,
-      };
-    });
+        return {
+          formId: form.formId,
+          nickname: form.nickname,
+          totalPoints: matchPoints + topScorerPoints,
+          matchPoints,
+          exactResults,
+          correctDecisions,
+          topScorerPoints,
+        };
+      },
+    );
 
     // Sort by total points, then exact results, then correct decisions
     return entries.sort((a, b) => {
-      if (b.totalPoints !== a.totalPoints) return b.totalPoints - a.totalPoints;
-      if (b.exactResults !== a.exactResults) return b.exactResults - a.exactResults;
+      if (b.totalPoints !== a.totalPoints) {
+        return b.totalPoints - a.totalPoints;
+      }
+      if (b.exactResults !== a.exactResults) {
+        return b.exactResults - a.exactResults;
+      }
       return b.correctDecisions - a.correctDecisions;
     });
   }, [leaguePredictions, simulatedResults, topScorerName, matchStageMap]);
 
   // Process groups data with calculated standings based on simulated results
   const groups = useMemo<GroupDisplay[]>(() => {
-    if (!standingsData?.groups || !allMatches) return [];
+    if (!standingsData?.groups || !allMatches) {
+      return [];
+    }
 
-    return GROUPS_LIST.map(letter => {
+    return GROUPS_LIST.map((letter) => {
       const groupStandings = standingsData.groups[letter] || [];
       const groupMatches = allMatches.filter(
-        m => m.stage === 'GROUP' && 
-             (m.team1Code.endsWith(letter) || m.team2Code.endsWith(letter) ||
-              m.team1?.groupLetter === letter || m.team2?.groupLetter === letter)
+        (m) =>
+          m.stage === 'GROUP' &&
+          (m.team1Code.endsWith(letter) ||
+            m.team2Code.endsWith(letter) ||
+            m.team1?.groupLetter === letter ||
+            m.team2?.groupLetter === letter),
       );
 
       // Calculate standings based on simulated results
-      const standingsWithResults = groupStandings.map(s => ({
+      const standingsWithResults = groupStandings.map((s) => ({
         position: s.position,
         team: s.team,
         played: 0,
@@ -399,14 +498,22 @@ export default function SimulatePage() {
       }));
 
       // Process each simulated result
-      groupMatches.forEach(match => {
+      groupMatches.forEach((match) => {
         const result = simulatedResults.get(match.id);
-        if (!result) return;
+        if (!result) {
+          return;
+        }
 
-        const team1Idx = standingsWithResults.findIndex(s => s.team?.id === match.team1?.id);
-        const team2Idx = standingsWithResults.findIndex(s => s.team?.id === match.team2?.id);
+        const team1Idx = standingsWithResults.findIndex(
+          (s) => s.team?.id === match.team1?.id,
+        );
+        const team2Idx = standingsWithResults.findIndex(
+          (s) => s.team?.id === match.team2?.id,
+        );
 
-        if (team1Idx === -1 || team2Idx === -1) return;
+        if (team1Idx === -1 || team2Idx === -1) {
+          return;
+        }
 
         standingsWithResults[team1Idx].played++;
         standingsWithResults[team2Idx].played++;
@@ -433,14 +540,18 @@ export default function SimulatePage() {
       });
 
       // Calculate goal difference
-      standingsWithResults.forEach(s => {
+      standingsWithResults.forEach((s) => {
         s.goalDiff = s.goalsFor - s.goalsAgainst;
       });
 
       // Sort standings
       const sortedStandings = [...standingsWithResults].sort((a, b) => {
-        if (b.points !== a.points) return b.points - a.points;
-        if (b.goalDiff !== a.goalDiff) return b.goalDiff - a.goalDiff;
+        if (b.points !== a.points) {
+          return b.points - a.points;
+        }
+        if (b.goalDiff !== a.goalDiff) {
+          return b.goalDiff - a.goalDiff;
+        }
         return b.goalsFor - a.goalsFor;
       });
 
@@ -450,9 +561,11 @@ export default function SimulatePage() {
 
       return {
         letter,
-        teams: groupStandings.map(s => s.team).filter((t): t is Team => t !== null),
+        teams: groupStandings
+          .map((s) => s.team)
+          .filter((t): t is Team => t !== null),
         standings: sortedStandings,
-        matches: groupMatches.map(match => ({
+        matches: groupMatches.map((match) => ({
           match,
           prediction: simulatedResults.get(match.id),
           team1: match.team1,
@@ -464,41 +577,54 @@ export default function SimulatePage() {
 
   // Get qualified teams from groups
   const qualifiedTeams = useMemo(() => {
-    const result: Record<string, { 
-      first: Team | null; 
-      second: Team | null; 
-      third: Team | null;
-      thirdStats: { points: number; goalDiff: number; goalsFor: number } | null;
-      isComplete: boolean;
-    }> = {};
-    
-    groups.forEach(group => {
-      const allTeamsHaveResults = group.standings.every(s => s.played >= 1);
-      
+    const result: Record<
+      string,
+      {
+        first: Team | null;
+        second: Team | null;
+        third: Team | null;
+        thirdStats: {
+          points: number;
+          goalDiff: number;
+          goalsFor: number;
+        } | null;
+        isComplete: boolean;
+      }
+    > = {};
+
+    groups.forEach((group) => {
+      const allTeamsHaveResults = group.standings.every((s) => s.played >= 1);
+
       const thirdPlace = group.standings[2];
       result[group.letter] = {
-        first: allTeamsHaveResults ? (group.standings[0]?.team || null) : null,
-        second: allTeamsHaveResults ? (group.standings[1]?.team || null) : null,
-        third: allTeamsHaveResults ? (thirdPlace?.team || null) : null,
-        thirdStats: allTeamsHaveResults && thirdPlace ? {
-          points: thirdPlace.points,
-          goalDiff: thirdPlace.goalDiff,
-          goalsFor: thirdPlace.goalsFor,
-        } : null,
+        first: allTeamsHaveResults ? group.standings[0]?.team || null : null,
+        second: allTeamsHaveResults ? group.standings[1]?.team || null : null,
+        third: allTeamsHaveResults ? thirdPlace?.team || null : null,
+        thirdStats:
+          allTeamsHaveResults && thirdPlace
+            ? {
+                points: thirdPlace.points,
+                goalDiff: thirdPlace.goalDiff,
+                goalsFor: thirdPlace.goalsFor,
+              }
+            : null,
         isComplete: allTeamsHaveResults,
       };
     });
-    
+
     return result;
   }, [groups]);
 
   // Calculate third place assignments
   const thirdPlaceResult = useMemo(() => {
-    const completedGroups = Object.entries(qualifiedTeams)
-      .filter(([_, q]) => q.isComplete && q.thirdStats);
-    
-    if (completedGroups.length !== 12) return null;
-    
+    const completedGroups = Object.entries(qualifiedTeams).filter(
+      ([_, q]) => q.isComplete && q.thirdStats,
+    );
+
+    if (completedGroups.length !== 12) {
+      return null;
+    }
+
     const thirdPlaceTeams = completedGroups.map(([letter, q]) => ({
       groupLetter: letter,
       team: q.third,
@@ -506,46 +632,74 @@ export default function SimulatePage() {
       goalDiff: q.thirdStats!.goalDiff,
       goalsFor: q.thirdStats!.goalsFor,
     }));
-    
+
     return calculateThirdPlaceAssignments(thirdPlaceTeams);
   }, [qualifiedTeams]);
 
   // Helper to get team by position code
-  const getTeamByCode = useCallback((code: string, matchNumber: number): Team | null => {
-    if (code === '3rd') {
-      if (!thirdPlaceResult?.assignments) return null;
-      const groupLetter = thirdPlaceResult.assignments[matchNumber];
-      if (!groupLetter) return null;
-      return qualifiedTeams[groupLetter]?.third || null;
-    }
-    
-    const position = parseInt(code[0]);
-    const groupLetter = code[1];
-    
-    if (!qualifiedTeams[groupLetter]) return null;
-    
-    if (position === 1) return qualifiedTeams[groupLetter].first;
-    if (position === 2) return qualifiedTeams[groupLetter].second;
-    if (position === 3) return qualifiedTeams[groupLetter].third;
-    
-    return null;
-  }, [qualifiedTeams, thirdPlaceResult]);
+  const getTeamByCode = useCallback(
+    (code: string, matchNumber: number): Team | null => {
+      if (code === '3rd') {
+        if (!thirdPlaceResult?.assignments) {
+          return null;
+        }
+        const groupLetter = thirdPlaceResult.assignments[matchNumber];
+        if (!groupLetter) {
+          return null;
+        }
+        return qualifiedTeams[groupLetter]?.third || null;
+      }
+
+      const position = parseInt(code[0]);
+      const groupLetter = code[1];
+
+      if (!qualifiedTeams[groupLetter]) {
+        return null;
+      }
+
+      if (position === 1) {
+        return qualifiedTeams[groupLetter].first;
+      }
+      if (position === 2) {
+        return qualifiedTeams[groupLetter].second;
+      }
+      if (position === 3) {
+        return qualifiedTeams[groupLetter].third;
+      }
+
+      return null;
+    },
+    [qualifiedTeams, thirdPlaceResult],
+  );
 
   // Get winner of a match based on simulated result
-  const getMatchWinner = useCallback((matchId: string, team1?: Team | null, team2?: Team | null): Team | null => {
-    const result = simulatedResults.get(matchId);
-    if (!result) return null;
-    
-    if (result.predScoreA > result.predScoreB) return team1 || null;
-    if (result.predScoreB > result.predScoreA) return team2 || null;
-    
-    const winnerId = winnerSelections.get(matchId);
-    if (winnerId) {
-      return winnerId === team1?.id ? team1 : team2 || null;
-    }
-    
-    return null;
-  }, [simulatedResults, winnerSelections]);
+  const getMatchWinner = useCallback(
+    (
+      matchId: string,
+      team1?: Team | null,
+      team2?: Team | null,
+    ): Team | null => {
+      const result = simulatedResults.get(matchId);
+      if (!result) {
+        return null;
+      }
+
+      if (result.predScoreA > result.predScoreB) {
+        return team1 || null;
+      }
+      if (result.predScoreB > result.predScoreA) {
+        return team2 || null;
+      }
+
+      const winnerId = winnerSelections.get(matchId);
+      if (winnerId) {
+        return winnerId === team1?.id ? team1 : team2 || null;
+      }
+
+      return null;
+    },
+    [simulatedResults, winnerSelections],
+  );
 
   // Process knockout matches
   const knockoutMatches = useMemo(() => {
@@ -562,13 +716,17 @@ export default function SimulatePage() {
 
     // R32 matches
     const r32 = allMatches
-      .filter(m => m.stage === 'R32')
+      .filter((m) => m.stage === 'R32')
       .sort((a, b) => a.matchNumber - b.matchNumber)
-      .map(match => {
-        const mapping = R32_MAPPING.find(m => m.match === match.matchNumber);
-        const predictedTeam1 = mapping ? getTeamByCode(mapping.team1, match.matchNumber) : null;
-        const predictedTeam2 = mapping ? getTeamByCode(mapping.team2, match.matchNumber) : null;
-        
+      .map((match) => {
+        const mapping = R32_MAPPING.find((m) => m.match === match.matchNumber);
+        const predictedTeam1 = mapping
+          ? getTeamByCode(mapping.team1, match.matchNumber)
+          : null;
+        const predictedTeam2 = mapping
+          ? getTeamByCode(mapping.team2, match.matchNumber)
+          : null;
+
         return {
           match,
           prediction: simulatedResults.get(match.id),
@@ -579,25 +737,31 @@ export default function SimulatePage() {
 
     // Build R32 winners map
     const r32Winners = new Map<number, Team | null>();
-    r32.forEach(m => {
+    r32.forEach((m) => {
       const winner = getMatchWinner(m.match.id, m.team1, m.team2);
       r32Winners.set(m.match.matchNumber, winner);
     });
 
     // R16 matches
     const r16Mapping: Record<number, [number, number]> = {
-      89: [74, 77], 90: [73, 75], 91: [76, 78], 92: [79, 80],
-      93: [83, 84], 94: [81, 82], 95: [86, 88], 96: [85, 87],
+      89: [74, 77],
+      90: [73, 75],
+      91: [76, 78],
+      92: [79, 80],
+      93: [83, 84],
+      94: [81, 82],
+      95: [86, 88],
+      96: [85, 87],
     };
 
     const r16 = allMatches
-      .filter(m => m.stage === 'R16')
+      .filter((m) => m.stage === 'R16')
       .sort((a, b) => a.matchNumber - b.matchNumber)
-      .map(match => {
+      .map((match) => {
         const sources = r16Mapping[match.matchNumber];
         const team1 = sources ? r32Winners.get(sources[0]) : match.team1;
         const team2 = sources ? r32Winners.get(sources[1]) : match.team2;
-        
+
         return {
           match,
           prediction: simulatedResults.get(match.id),
@@ -608,24 +772,27 @@ export default function SimulatePage() {
 
     // Build R16 winners map
     const r16Winners = new Map<number, Team | null>();
-    r16.forEach(m => {
+    r16.forEach((m) => {
       const winner = getMatchWinner(m.match.id, m.team1, m.team2);
       r16Winners.set(m.match.matchNumber, winner);
     });
 
     // QF matches
     const qfMapping: Record<number, [number, number]> = {
-      97: [89, 90], 98: [93, 94], 99: [91, 92], 100: [95, 96],
+      97: [89, 90],
+      98: [93, 94],
+      99: [91, 92],
+      100: [95, 96],
     };
 
     const qf = allMatches
-      .filter(m => m.stage === 'QF')
+      .filter((m) => m.stage === 'QF')
       .sort((a, b) => a.matchNumber - b.matchNumber)
-      .map(match => {
+      .map((match) => {
         const sources = qfMapping[match.matchNumber];
         const team1 = sources ? r16Winners.get(sources[0]) : match.team1;
         const team2 = sources ? r16Winners.get(sources[1]) : match.team2;
-        
+
         return {
           match,
           prediction: simulatedResults.get(match.id),
@@ -636,24 +803,25 @@ export default function SimulatePage() {
 
     // Build QF winners map
     const qfWinners = new Map<number, Team | null>();
-    qf.forEach(m => {
+    qf.forEach((m) => {
       const winner = getMatchWinner(m.match.id, m.team1, m.team2);
       qfWinners.set(m.match.matchNumber, winner);
     });
 
     // SF matches
     const sfMapping: Record<number, [number, number]> = {
-      101: [97, 98], 102: [99, 100],
+      101: [97, 98],
+      102: [99, 100],
     };
 
     const sf = allMatches
-      .filter(m => m.stage === 'SF')
+      .filter((m) => m.stage === 'SF')
       .sort((a, b) => a.matchNumber - b.matchNumber)
-      .map(match => {
+      .map((match) => {
         const sources = sfMapping[match.matchNumber];
         const team1 = sources ? qfWinners.get(sources[0]) : match.team1;
         const team2 = sources ? qfWinners.get(sources[1]) : match.team2;
-        
+
         return {
           match,
           prediction: simulatedResults.get(match.id),
@@ -665,21 +833,24 @@ export default function SimulatePage() {
     // Build SF winners and losers
     const sfWinners = new Map<number, Team | null>();
     const sfLosers = new Map<number, Team | null>();
-    sf.forEach(m => {
+    sf.forEach((m) => {
       const winner = getMatchWinner(m.match.id, m.team1, m.team2);
       sfWinners.set(m.match.matchNumber, winner);
       if (winner) {
-        sfLosers.set(m.match.matchNumber, winner.id === m.team1?.id ? (m.team2 || null) : (m.team1 || null));
+        sfLosers.set(
+          m.match.matchNumber,
+          winner.id === m.team1?.id ? m.team2 || null : m.team1 || null,
+        );
       }
     });
 
     // Final - match 104
-    const final = allMatches.find(m => m.stage === 'F');
+    const final = allMatches.find((m) => m.stage === 'F');
     const finalTeam1 = sfWinners.get(101);
     const finalTeam2 = sfWinners.get(102);
-    
+
     // Third place match - match 103
-    const thirdMatch = allMatches.find(m => m.matchNumber === 103);
+    const thirdMatch = allMatches.find((m) => m.matchNumber === 103);
     const thirdTeam1 = sfLosers.get(101);
     const thirdTeam2 = sfLosers.get(102);
 
@@ -688,51 +859,71 @@ export default function SimulatePage() {
       r16,
       qf,
       sf,
-      third: thirdMatch ? {
-        match: thirdMatch,
-        prediction: simulatedResults.get(thirdMatch.id),
-        team1: thirdTeam1 || thirdMatch.team1,
-        team2: thirdTeam2 || thirdMatch.team2,
-      } : null,
-      final: final ? {
-        match: final,
-        prediction: simulatedResults.get(final.id),
-        team1: finalTeam1 || final.team1,
-        team2: finalTeam2 || final.team2,
-      } : null,
+      third: thirdMatch
+        ? {
+            match: thirdMatch,
+            prediction: simulatedResults.get(thirdMatch.id),
+            team1: thirdTeam1 || thirdMatch.team1,
+            team2: thirdTeam2 || thirdMatch.team2,
+          }
+        : null,
+      final: final
+        ? {
+            match: final,
+            prediction: simulatedResults.get(final.id),
+            team1: finalTeam1 || final.team1,
+            team2: finalTeam2 || final.team2,
+          }
+        : null,
     };
   }, [allMatches, simulatedResults, getTeamByCode, getMatchWinner]);
 
   // Handle result changes
-  const handleResultChange = useCallback((matchId: string, scoreA: number, scoreB: number) => {
-    setSimulatedResults(prev => {
-      const newMap = new Map(prev);
-      newMap.set(matchId, { matchId, predScoreA: scoreA, predScoreB: scoreB });
-      return newMap;
-    });
-  }, []);
+  const handleResultChange = useCallback(
+    (matchId: string, scoreA: number, scoreB: number) => {
+      setSimulatedResults((prev) => {
+        const newMap = new Map(prev);
+        newMap.set(matchId, {
+          matchId,
+          predScoreA: scoreA,
+          predScoreB: scoreB,
+        });
+        return newMap;
+      });
+    },
+    [],
+  );
 
   // Handle winner selection (for tied knockout matches)
-  const handleWinnerSelect = useCallback((matchId: string, winnerId: string) => {
-    setWinnerSelections(prev => {
-      const newMap = new Map(prev);
-      newMap.set(matchId, winnerId);
-      return newMap;
-    });
-  }, []);
+  const handleWinnerSelect = useCallback(
+    (matchId: string, winnerId: string) => {
+      setWinnerSelections((prev) => {
+        const newMap = new Map(prev);
+        newMap.set(matchId, winnerId);
+        return newMap;
+      });
+    },
+    [],
+  );
 
   // Fill with random results
   const fillRandomResults = useCallback(() => {
-    if (!allMatches) return;
-    
+    if (!allMatches) {
+      return;
+    }
+
     const newResults = new Map(simulatedResults);
-    
-    allMatches.forEach(match => {
+
+    allMatches.forEach((match) => {
       const scoreA = Math.floor(Math.random() * 5);
       const scoreB = Math.floor(Math.random() * 5);
-      newResults.set(match.id, { matchId: match.id, predScoreA: scoreA, predScoreB: scoreB });
+      newResults.set(match.id, {
+        matchId: match.id,
+        predScoreA: scoreA,
+        predScoreB: scoreB,
+      });
     });
-    
+
     setSimulatedResults(newResults);
   }, [allMatches, simulatedResults]);
 
@@ -762,7 +953,9 @@ export default function SimulatePage() {
         <Header />
         <main className="container mx-auto px-4 py-8">
           <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-4 text-center">
-            <p className="text-red-300">שגיאה בטעינת הנתונים. אנא נסה שוב מאוחר יותר.</p>
+            <p className="text-red-300">
+              שגיאה בטעינת הנתונים. אנא נסה שוב מאוחר יותר.
+            </p>
           </div>
         </main>
       </div>
@@ -770,14 +963,21 @@ export default function SimulatePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-slate-900 to-violet-950" dir="rtl">
+    <div
+      className="min-h-screen bg-gradient-to-br from-indigo-950 via-slate-900 to-violet-950"
+      dir="rtl"
+    >
       <Header />
 
       <div className="flex">
         {/* Sidebar - Realtime Leaderboard */}
-        <aside className={`${isSidebarCollapsed ? 'w-12' : 'w-80'} transition-all duration-300 flex-shrink-0`}>
+        <aside
+          className={`${isSidebarCollapsed ? 'w-12' : 'w-80'} transition-all duration-300 flex-shrink-0`}
+        >
           <div className="sticky top-0 h-screen overflow-hidden">
-            <div className={`h-full bg-slate-900/80 backdrop-blur-md border-l border-white/10 flex flex-col ${isSidebarCollapsed ? 'items-center py-4' : 'p-4'}`}>
+            <div
+              className={`h-full bg-slate-900/80 backdrop-blur-md border-l border-white/10 flex flex-col ${isSidebarCollapsed ? 'items-center py-4' : 'p-4'}`}
+            >
               {/* Collapse Button */}
               <button
                 onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
@@ -807,7 +1007,9 @@ export default function SimulatePage() {
                     <div className="flex-1 flex items-center justify-center">
                       <div className="text-center">
                         <div className="animate-spin rounded-full h-8 w-8 border-2 border-violet-400 border-t-transparent mx-auto mb-2"></div>
-                        <p className="text-violet-300 text-sm">טוען ניבויים...</p>
+                        <p className="text-violet-300 text-sm">
+                          טוען ניבויים...
+                        </p>
                       </div>
                     </div>
                   )}
@@ -831,7 +1033,11 @@ export default function SimulatePage() {
                     <div className="flex-1 flex items-center justify-center">
                       <div className="text-center text-violet-400">
                         <p className="text-4xl mb-2">📝</p>
-                        <p className="text-sm">מלא תוצאות כדי לראות<br />את טבלת הדירוג</p>
+                        <p className="text-sm">
+                          מלא תוצאות כדי לראות
+                          <br />
+                          את טבלת הדירוג
+                        </p>
                       </div>
                     </div>
                   )}
@@ -844,25 +1050,27 @@ export default function SimulatePage() {
                           <div
                             key={entry.formId}
                             className={`flex items-center gap-2 p-2 rounded-lg transition-all ${
-                              idx === 0 
-                                ? 'bg-gradient-to-r from-yellow-500/20 to-amber-500/10 border border-yellow-500/30' 
+                              idx === 0
+                                ? 'bg-gradient-to-r from-yellow-500/20 to-amber-500/10 border border-yellow-500/30'
                                 : idx === 1
-                                ? 'bg-gradient-to-r from-slate-400/20 to-slate-500/10 border border-slate-400/30'
-                                : idx === 2
-                                ? 'bg-gradient-to-r from-amber-600/20 to-amber-700/10 border border-amber-600/30'
-                                : 'bg-white/5 hover:bg-white/10'
+                                  ? 'bg-gradient-to-r from-slate-400/20 to-slate-500/10 border border-slate-400/30'
+                                  : idx === 2
+                                    ? 'bg-gradient-to-r from-amber-600/20 to-amber-700/10 border border-amber-600/30'
+                                    : 'bg-white/5 hover:bg-white/10'
                             }`}
                           >
                             {/* Rank */}
-                            <div className={`w-7 h-7 flex items-center justify-center rounded-full text-sm font-bold flex-shrink-0 ${
-                              idx === 0 
-                                ? 'bg-gradient-to-br from-yellow-400 to-amber-500 text-white' 
-                                : idx === 1
-                                ? 'bg-gradient-to-br from-slate-300 to-slate-400 text-slate-800'
-                                : idx === 2
-                                ? 'bg-gradient-to-br from-amber-600 to-amber-700 text-white'
-                                : 'bg-white/10 text-violet-300'
-                            }`}>
+                            <div
+                              className={`w-7 h-7 flex items-center justify-center rounded-full text-sm font-bold flex-shrink-0 ${
+                                idx === 0
+                                  ? 'bg-gradient-to-br from-yellow-400 to-amber-500 text-white'
+                                  : idx === 1
+                                    ? 'bg-gradient-to-br from-slate-300 to-slate-400 text-slate-800'
+                                    : idx === 2
+                                      ? 'bg-gradient-to-br from-amber-600 to-amber-700 text-white'
+                                      : 'bg-white/10 text-violet-300'
+                              }`}
+                            >
                               {idx + 1}
                             </div>
 
@@ -872,8 +1080,12 @@ export default function SimulatePage() {
                                 {entry.nickname}
                               </div>
                               <div className="flex items-center gap-2 text-xs text-violet-400">
-                                <span title="פגיעות מדויקות">🎯 {entry.exactResults}</span>
-                                <span title="הכרעות נכונות">✓ {entry.correctDecisions}</span>
+                                <span title="פגיעות מדויקות">
+                                  🎯 {entry.exactResults}
+                                </span>
+                                <span title="הכרעות נכונות">
+                                  ✓ {entry.correctDecisions}
+                                </span>
                               </div>
                             </div>
 
@@ -892,11 +1104,15 @@ export default function SimulatePage() {
                       <div className="mt-4 pt-4 border-t border-white/10 text-xs text-violet-400">
                         <div className="flex justify-between">
                           <span>משתתפים:</span>
-                          <span className="text-white">{realtimeLeaderboard.length}</span>
+                          <span className="text-white">
+                            {realtimeLeaderboard.length}
+                          </span>
                         </div>
                         <div className="flex justify-between mt-1">
                           <span>תוצאות שהוזנו:</span>
-                          <span className="text-white">{simulatedResults.size} / {allMatches?.length || 0}</span>
+                          <span className="text-white">
+                            {simulatedResults.size} / {allMatches?.length || 0}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -915,7 +1131,7 @@ export default function SimulatePage() {
               <div>
                 <h1 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-3">
                   <span className="text-3xl md:text-4xl">🔮</span>
-                   תוצאות אמת
+                  תוצאות אמת
                 </h1>
                 <p className="text-violet-300 mt-1">
                   מלא תוצאות וראה איך הדירוג משתנה בזמן אמת!
@@ -933,7 +1149,14 @@ export default function SimulatePage() {
                     </span>
                   ) : lastSaved ? (
                     <span className="text-emerald-400 flex items-center gap-1">
-                      ✓ נשמר {new Date().getTime() - lastSaved.getTime() < 10000 ? 'כעת' : 'ב-' + lastSaved.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}
+                      ✓ נשמר{' '}
+                      {new Date().getTime() - lastSaved.getTime() < 10000
+                        ? 'כעת'
+                        : 'ב-' +
+                          lastSaved.toLocaleTimeString('he-IL', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
                     </span>
                   ) : null}
                 </div>
@@ -969,7 +1192,9 @@ export default function SimulatePage() {
 
             {/* Top Scorer Input */}
             <div className="mt-4 flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-lg p-3 max-w-md">
-              <label className="text-violet-200 text-sm whitespace-nowrap">⚽ מלך שערים:</label>
+              <label className="text-violet-200 text-sm whitespace-nowrap">
+                ⚽ מלך שערים:
+              </label>
               <input
                 type="text"
                 value={topScorerName}
@@ -984,15 +1209,24 @@ export default function SimulatePage() {
           {/* Stats Counter */}
           <div className="mb-6 flex items-center gap-4 text-sm">
             <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2 text-violet-200">
-              📝 תוצאות שהוזנו: <span className="font-bold text-white">{simulatedResults.size}</span>
+              📝 תוצאות שהוזנו:{' '}
+              <span className="font-bold text-white">
+                {simulatedResults.size}
+              </span>
               {allMatches && (
                 <span className="text-violet-400"> / {allMatches.length}</span>
               )}
             </div>
             {realtimeLeaderboard.length > 0 && (
               <div className="bg-emerald-500/20 backdrop-blur-sm rounded-lg px-4 py-2 text-emerald-300">
-                🏆 מוביל: <span className="font-bold text-white">{realtimeLeaderboard[0]?.nickname}</span>
-                <span className="text-emerald-400"> ({realtimeLeaderboard[0]?.totalPoints} נק׳)</span>
+                🏆 מוביל:{' '}
+                <span className="font-bold text-white">
+                  {realtimeLeaderboard[0]?.nickname}
+                </span>
+                <span className="text-emerald-400">
+                  {' '}
+                  ({realtimeLeaderboard[0]?.totalPoints} נק׳)
+                </span>
               </div>
             )}
           </div>
@@ -1016,7 +1250,7 @@ export default function SimulatePage() {
                   (הקבוצות יתעדכנו לפי התוצאות שמילאת בשלב הבתים)
                 </span>
               </h2>
-              
+
               <KnockoutBracket
                 r32Matches={knockoutMatches.r32}
                 r16Matches={knockoutMatches.r16}

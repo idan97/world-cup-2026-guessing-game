@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import type { MatchDisplay, Team } from '../types';
+import type { MatchDisplay } from '../types';
 
 interface KnockoutMatchProps {
   matchDisplay: MatchDisplay | null;
@@ -33,8 +33,12 @@ export default function KnockoutMatch({
   const team1 = matchDisplay?.team1;
   const team2 = matchDisplay?.team2;
 
-  const [scoreA, setScoreA] = useState<string | number>(prediction?.predScoreA ?? '-');
-  const [scoreB, setScoreB] = useState<string | number>(prediction?.predScoreB ?? '-');
+  const [scoreA, setScoreA] = useState<string | number>(
+    prediction?.predScoreA ?? '-',
+  );
+  const [scoreB, setScoreB] = useState<string | number>(
+    prediction?.predScoreB ?? '-',
+  );
   const [selectedWinner, setSelectedWinner] = useState<string | null>(null);
 
   useEffect(() => {
@@ -45,17 +49,28 @@ export default function KnockoutMatch({
   }, [prediction]);
 
   const handleScoreChange = (team: 'A' | 'B', value: string) => {
-    if (!match) return;
-    const numValue = value === '' || value === '-' ? '-' : Math.max(0, parseInt(value) || 0);
+    if (!match) {
+      return;
+    }
+    const numValue =
+      value === '' || value === '-' ? '-' : Math.max(0, parseInt(value) || 0);
     if (team === 'A') {
       setScoreA(numValue);
       if (typeof numValue === 'number') {
-        onPredictionChange(match.id, numValue, typeof scoreB === 'number' ? scoreB : 0);
+        onPredictionChange(
+          match.id,
+          numValue,
+          typeof scoreB === 'number' ? scoreB : 0,
+        );
       }
     } else {
       setScoreB(numValue);
       if (typeof numValue === 'number') {
-        onPredictionChange(match.id, typeof scoreA === 'number' ? scoreA : 0, numValue);
+        onPredictionChange(
+          match.id,
+          typeof scoreA === 'number' ? scoreA : 0,
+          numValue,
+        );
       }
     }
     // Reset winner selection when scores change
@@ -63,14 +78,18 @@ export default function KnockoutMatch({
   };
 
   const handleWinnerSelect = (winnerId: string) => {
-    if (!match || !onWinnerSelect) return;
+    if (!match || !onWinnerSelect) {
+      return;
+    }
     setSelectedWinner(winnerId);
     onWinnerSelect(match.id, winnerId);
   };
 
-  const team1Name = team1?.nameHebrew || team1?.name || match?.team1Name || team1Placeholder;
-  const team2Name = team2?.nameHebrew || team2?.name || match?.team2Name || team2Placeholder;
-  
+  const team1Name =
+    team1?.nameHebrew || team1?.name || match?.team1Name || team1Placeholder;
+  const team2Name =
+    team2?.nameHebrew || team2?.name || match?.team2Name || team2Placeholder;
+
   const isTied = scoreA === scoreB;
   const hasTeams = team1 && team2;
 
@@ -89,16 +108,23 @@ export default function KnockoutMatch({
     return (
       <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden min-w-[160px]">
         {showMatchNumber && (
-          <div className={`bg-gradient-to-r ${headerGradient} text-white px-2 py-0.5 text-[10px] font-medium text-center`}>
+          <div
+            className={`bg-gradient-to-r ${headerGradient} text-white px-2 py-0.5 text-[10px] font-medium text-center`}
+          >
             משחק {matchNumber}
           </div>
         )}
         <div className="p-1.5 space-y-1">
           {/* Team 1 */}
           <div className="flex items-center justify-between gap-1">
-            <span className={`text-[10px] truncate flex-1 ${
-              !isTied && scoreA > scoreB ? 'font-bold text-emerald-700' : 'text-slate-700'
-            }`} title={team1Name}>
+            <span
+              className={`text-[10px] truncate flex-1 ${
+                !isTied && scoreA > scoreB
+                  ? 'font-bold text-emerald-700'
+                  : 'text-slate-700'
+              }`}
+              title={team1Name}
+            >
               {team1Name}
             </span>
             <input
@@ -114,9 +140,14 @@ export default function KnockoutMatch({
           </div>
           {/* Team 2 */}
           <div className="flex items-center justify-between gap-1">
-            <span className={`text-[10px] truncate flex-1 ${
-              !isTied && scoreB > scoreA ? 'font-bold text-emerald-700' : 'text-slate-700'
-            }`} title={team2Name}>
+            <span
+              className={`text-[10px] truncate flex-1 ${
+                !isTied && scoreB > scoreA
+                  ? 'font-bold text-emerald-700'
+                  : 'text-slate-700'
+              }`}
+              title={team2Name}
+            >
               {team2Name}
             </span>
             <input
@@ -133,14 +164,16 @@ export default function KnockoutMatch({
           {/* Penalty winner selection */}
           {isTied && hasTeams && (scoreA > 0 || scoreB > 0) && (
             <div className="pt-1 border-t border-slate-100">
-              <div className="text-[9px] text-slate-500 mb-0.5">מנצח פנדלים:</div>
+              <div className="text-[9px] text-slate-500 mb-0.5">
+                מנצח פנדלים:
+              </div>
               <div className="flex gap-1">
                 <button
                   onClick={() => handleWinnerSelect(team1!.id)}
                   disabled={isLocked}
                   className={`flex-1 text-[9px] py-0.5 rounded border ${
-                    selectedWinner === team1?.id 
-                      ? 'bg-emerald-500 text-white border-emerald-600' 
+                    selectedWinner === team1?.id
+                      ? 'bg-emerald-500 text-white border-emerald-600'
                       : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'
                   }`}
                 >
@@ -150,8 +183,8 @@ export default function KnockoutMatch({
                   onClick={() => handleWinnerSelect(team2!.id)}
                   disabled={isLocked}
                   className={`flex-1 text-[9px] py-0.5 rounded border ${
-                    selectedWinner === team2?.id 
-                      ? 'bg-emerald-500 text-white border-emerald-600' 
+                    selectedWinner === team2?.id
+                      ? 'bg-emerald-500 text-white border-emerald-600'
                       : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'
                   }`}
                 >
@@ -169,16 +202,23 @@ export default function KnockoutMatch({
   return (
     <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden min-w-[200px]">
       {showMatchNumber && (
-        <div className={`bg-gradient-to-r ${headerGradient} text-white px-3 py-1 text-xs font-medium text-center`}>
+        <div
+          className={`bg-gradient-to-r ${headerGradient} text-white px-3 py-1 text-xs font-medium text-center`}
+        >
           משחק {matchNumber}
         </div>
       )}
       <div className="p-3 space-y-2">
         {/* Team 1 */}
         <div className="flex items-center justify-between gap-2">
-          <span className={`text-sm truncate flex-1 ${
-            !isTied && scoreA > scoreB ? 'font-bold text-emerald-700' : 'text-slate-700'
-          }`} title={team1Name}>
+          <span
+            className={`text-sm truncate flex-1 ${
+              !isTied && scoreA > scoreB
+                ? 'font-bold text-emerald-700'
+                : 'text-slate-700'
+            }`}
+            title={team1Name}
+          >
             {team1Name}
           </span>
           <input
@@ -194,9 +234,14 @@ export default function KnockoutMatch({
         </div>
         {/* Team 2 */}
         <div className="flex items-center justify-between gap-2">
-          <span className={`text-sm truncate flex-1 ${
-            !isTied && scoreB > scoreA ? 'font-bold text-emerald-700' : 'text-slate-700'
-          }`} title={team2Name}>
+          <span
+            className={`text-sm truncate flex-1 ${
+              !isTied && scoreB > scoreA
+                ? 'font-bold text-emerald-700'
+                : 'text-slate-700'
+            }`}
+            title={team2Name}
+          >
             {team2Name}
           </span>
           <input
@@ -219,8 +264,8 @@ export default function KnockoutMatch({
                 onClick={() => handleWinnerSelect(team1!.id)}
                 disabled={isLocked}
                 className={`flex-1 text-xs py-1 rounded border ${
-                  selectedWinner === team1?.id 
-                    ? 'bg-emerald-500 text-white border-emerald-600' 
+                  selectedWinner === team1?.id
+                    ? 'bg-emerald-500 text-white border-emerald-600'
                     : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'
                 }`}
               >
@@ -230,8 +275,8 @@ export default function KnockoutMatch({
                 onClick={() => handleWinnerSelect(team2!.id)}
                 disabled={isLocked}
                 className={`flex-1 text-xs py-1 rounded border ${
-                  selectedWinner === team2?.id 
-                    ? 'bg-emerald-500 text-white border-emerald-600' 
+                  selectedWinner === team2?.id
+                    ? 'bg-emerald-500 text-white border-emerald-600'
                     : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'
                 }`}
               >
@@ -244,4 +289,3 @@ export default function KnockoutMatch({
     </div>
   );
 }
-

@@ -1,4 +1,4 @@
-import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/nextjs'
+import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/nextjs';
 
 export default function Home() {
   return (
@@ -36,21 +36,21 @@ export default function Home() {
               Predict the World Cup 2026!
             </h2>
             <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-              Join the ultimate football prediction game. Guess match results, 
+              Join the ultimate football prediction game. Guess match results,
               predict winners, and compete with friends in private leagues.
             </p>
-                         <div className="space-y-4 sm:space-y-0 sm:space-x-4 sm:flex sm:justify-center">
-               <SignInButton mode="modal">
-                 <button className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-8 rounded-lg text-lg transition-colors">
-                   Get Started
-                 </button>
-               </SignInButton>
-               <SignInButton mode="modal">
-                 <button className="w-full sm:w-auto bg-white hover:bg-gray-50 text-blue-600 font-medium py-3 px-8 rounded-lg text-lg border-2 border-blue-600 transition-colors">
-                   Sign In
-                 </button>
-               </SignInButton>
-             </div>
+            <div className="space-y-4 sm:space-y-0 sm:space-x-4 sm:flex sm:justify-center">
+              <SignInButton mode="modal">
+                <button className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-8 rounded-lg text-lg transition-colors">
+                  Get Started
+                </button>
+              </SignInButton>
+              <SignInButton mode="modal">
+                <button className="w-full sm:w-auto bg-white hover:bg-gray-50 text-blue-600 font-medium py-3 px-8 rounded-lg text-lg border-2 border-blue-600 transition-colors">
+                  Sign In
+                </button>
+              </SignInButton>
+            </div>
           </div>
 
           {/* Features */}
@@ -62,7 +62,8 @@ export default function Home() {
                   Predict Matches
                 </h3>
                 <p className="text-gray-600">
-                  Guess the scores of all World Cup matches and earn points for accurate predictions.
+                  Guess the scores of all World Cup matches and earn points for
+                  accurate predictions.
                 </p>
               </div>
             </div>
@@ -73,7 +74,8 @@ export default function Home() {
                   Join Leagues
                 </h3>
                 <p className="text-gray-600">
-                  Create private leagues with friends or join public competitions.
+                  Create private leagues with friends or join public
+                  competitions.
                 </p>
               </div>
             </div>
@@ -84,7 +86,8 @@ export default function Home() {
                   Track Progress
                 </h3>
                 <p className="text-gray-600">
-                  Monitor your ranking, compare results, and see detailed statistics.
+                  Monitor your ranking, compare results, and see detailed
+                  statistics.
                 </p>
               </div>
             </div>
@@ -99,14 +102,14 @@ export default function Home() {
             <p className="text-xl text-gray-600 mb-8">
               Ready to make your predictions?
             </p>
-                         <a href="/home">
-               <button className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-8 rounded-lg text-lg transition-colors">
-                 Go to Dashboard
-               </button>
-             </a>
+            <a href="/home">
+              <button className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-8 rounded-lg text-lg transition-colors">
+                Go to Dashboard
+              </button>
+            </a>
           </div>
         </SignedIn>
       </main>
     </div>
-  )
+  );
 }
