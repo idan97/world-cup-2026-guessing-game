@@ -12,7 +12,7 @@ const simulationController = new SimulationController();
 router.post(
   '/calculate',
   requireAuth,
-  simulationController.calculateSimulation
+  simulationController.calculateSimulation,
 );
 
 /**
@@ -22,7 +22,7 @@ router.post(
 router.post(
   '/league/:id/calculate',
   requireAuth,
-  simulationController.calculateLeagueSimulation
+  simulationController.calculateLeagueSimulation,
 );
 
 /**
@@ -32,7 +32,7 @@ router.post(
 router.get(
   '/league/:id/all-predictions',
   requireAuth,
-  simulationController.getLeaguePredictions
+  simulationController.getLeaguePredictions,
 );
 
 /**

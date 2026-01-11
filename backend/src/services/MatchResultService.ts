@@ -66,7 +66,7 @@ export async function updateMatchResult(result: MatchResult): Promise<void> {
   });
 
   console.log(
-    `✅ Match ${match.matchNumber} result updated: ${team1Score}-${team2Score}`
+    `✅ Match ${match.matchNumber} result updated: ${team1Score}-${team2Score}`,
   );
 
   // If it's a group stage match, update group standings
@@ -75,7 +75,7 @@ export async function updateMatchResult(result: MatchResult): Promise<void> {
       match.team1Id,
       match.team2Id,
       team1Score,
-      team2Score
+      team2Score,
     );
 
     // Check if group stage is complete
@@ -100,7 +100,7 @@ async function updateGroupStandingsFromMatch(
   team1Id: string,
   team2Id: string,
   team1Score: number,
-  team2Score: number
+  team2Score: number,
 ): Promise<void> {
   // Get both teams to know their groups
   const [team1, team2] = await Promise.all([
@@ -209,8 +209,12 @@ async function sortGroupStandings(groupLetter: string): Promise<void> {
 
   // Sort by: points DESC, goalDiff DESC, goalsFor DESC
   const sorted = standings.sort((a, b) => {
-    if (a.points !== b.points) return b.points - a.points;
-    if (a.goalDiff !== b.goalDiff) return b.goalDiff - a.goalDiff;
+    if (a.points !== b.points) {
+      return b.points - a.points;
+    }
+    if (a.goalDiff !== b.goalDiff) {
+      return b.goalDiff - a.goalDiff;
+    }
     return b.goalsFor - a.goalsFor;
   });
 
@@ -220,7 +224,9 @@ async function sortGroupStandings(groupLetter: string): Promise<void> {
     // Step 1: Set all to temporary positions
     for (let i = 0; i < sorted.length; i++) {
       const standing = sorted[i];
-      if (!standing) continue;
+      if (!standing) {
+        continue;
+      }
 
       await tx.groupStanding.update({
         where: { id: standing.id },
@@ -231,7 +237,9 @@ async function sortGroupStandings(groupLetter: string): Promise<void> {
     // Step 2: Set all to correct positions
     for (let i = 0; i < sorted.length; i++) {
       const standing = sorted[i];
-      if (!standing) continue;
+      if (!standing) {
+        continue;
+      }
 
       await tx.groupStanding.update({
         where: { id: standing.id },
@@ -271,15 +279,21 @@ async function updateThirdPlaceRankings(): Promise<void> {
 
   // Sort by: points DESC, goalDiff DESC, goalsFor DESC
   const sorted = thirdPlaceStandings.sort((a, b) => {
-    if (a.points !== b.points) return b.points - a.points;
-    if (a.goalDiff !== b.goalDiff) return b.goalDiff - a.goalDiff;
+    if (a.points !== b.points) {
+      return b.points - a.points;
+    }
+    if (a.goalDiff !== b.goalDiff) {
+      return b.goalDiff - a.goalDiff;
+    }
     return b.goalsFor - a.goalsFor;
   });
 
   // Take top 8 and assign ranks
   for (let i = 0; i < Math.min(8, sorted.length); i++) {
     const standing = sorted[i];
-    if (!standing) continue;
+    if (!standing) {
+      continue;
+    }
 
     await prisma.thirdPlaceRanking.update({
       where: { groupLetter: standing.groupLetter },
@@ -330,14 +344,18 @@ async function assignR32ThirdPlaceTeams(): Promise<void> {
       },
     });
 
-    if (!thirdPlaceTeam?.teamId) continue;
+    if (!thirdPlaceTeam?.teamId) {
+      continue;
+    }
 
     // Find which position in the match needs this team (team1 or team2)
     const match = await prisma.match.findUnique({
       where: { matchNumber },
     });
 
-    if (!match) continue;
+    if (!match) {
+      continue;
+    }
 
     // Check if team1Code or team2Code contains '3-'
     const updateData: { team1Id?: string; team2Id?: string } = {};
@@ -354,7 +372,7 @@ async function assignR32ThirdPlaceTeams(): Promise<void> {
         data: updateData,
       });
       console.log(
-        `🎯 Assigned Group ${groupLetter} 3rd place to Match ${matchNumber}`
+        `🎯 Assigned Group ${groupLetter} 3rd place to Match ${matchNumber}`,
       );
     }
   }
@@ -365,7 +383,7 @@ async function assignR32ThirdPlaceTeams(): Promise<void> {
  */
 async function assignWinnerToNextMatch(
   matchNumber: number,
-  winnerId: string
+  winnerId: string,
 ): Promise<void> {
   // Find next match that references this match
   const winnerCode = `W${matchNumber}`;
@@ -401,7 +419,7 @@ async function assignWinnerToNextMatch(
 export async function initializeTeamInGroupStanding(
   teamId: string,
   groupLetter: string,
-  initialPosition: number
+  initialPosition: number,
 ): Promise<void> {
   // Check if team already has a standing
   const existing = await prisma.groupStanding.findFirst({
@@ -411,7 +429,9 @@ export async function initializeTeamInGroupStanding(
     },
   });
 
-  if (existing) return;
+  if (existing) {
+    return;
+  }
 
   // Find an empty position or create new one
   const emptyPosition = await prisma.groupStanding.findFirst({

@@ -51,7 +51,7 @@ export class AdminController extends BaseController {
   // GET /admin/matches - List all matches with optional filters
   public getMatches = async (
     req: Request,
-    res: Response
+    res: Response,
   ): Promise<Response> => {
     try {
       const stage = req.query['stage'] as Stage | undefined;
@@ -95,7 +95,7 @@ export class AdminController extends BaseController {
   // POST /admin/matches - Create/import matches (bulk)
   public createMatches = async (
     req: Request,
-    res: Response
+    res: Response,
   ): Promise<Response> => {
     try {
       // Check if it's a single match or bulk
@@ -105,7 +105,7 @@ export class AdminController extends BaseController {
           return this.badRequest(
             res,
             'Invalid matches data',
-            result.error.errors
+            result.error.errors,
           );
         }
 
@@ -130,13 +130,13 @@ export class AdminController extends BaseController {
 
         logger.info(
           { count: matches.length, userId: req.auth.userId },
-          'Bulk matches created'
+          'Bulk matches created',
         );
 
         return this.created(
           res,
           { count: matches.length },
-          'Matches created successfully'
+          'Matches created successfully',
         );
       } else {
         const result = createMatchSchema.safeParse(req.body);
@@ -144,7 +144,7 @@ export class AdminController extends BaseController {
           return this.badRequest(
             res,
             'Invalid match data',
-            result.error.errors
+            result.error.errors,
           );
         }
 
@@ -169,7 +169,7 @@ export class AdminController extends BaseController {
 
         logger.info(
           { matchId: match.id, userId: req.auth.userId },
-          'Match created'
+          'Match created',
         );
 
         return this.created(res, match, 'Match created successfully');
@@ -177,7 +177,7 @@ export class AdminController extends BaseController {
     } catch (error) {
       logger.error(
         { error, userId: req.auth.userId },
-        'Error creating matches'
+        'Error creating matches',
       );
       return this.internalError(res, error);
     }
@@ -186,7 +186,7 @@ export class AdminController extends BaseController {
   // PUT /admin/matches/:id - Update match details
   public updateMatch = async (
     req: Request,
-    res: Response
+    res: Response,
   ): Promise<Response> => {
     try {
       const matchId = req.params['id'];
@@ -199,26 +199,53 @@ export class AdminController extends BaseController {
         return this.badRequest(res, 'Invalid match data', result.error.errors);
       }
 
-      const updateData = {
-        ...result.data,
-        scheduledAt:
-          result.data.scheduledAt && typeof result.data.scheduledAt === 'string'
-            ? new Date(result.data.scheduledAt)
-            : result.data.scheduledAt,
-      };
+      // Build update data object with proper types
+      const { scheduledAt, ...restData } = result.data;
+      const updateData: Parameters<typeof MatchModel.update>[1] = {};
+
+      // Copy only defined properties
+      if (restData.stage !== undefined) {
+        updateData.stage = restData.stage;
+      }
+      if (restData.team1Code !== undefined) {
+        updateData.team1Code = restData.team1Code;
+      }
+      if (restData.team2Code !== undefined) {
+        updateData.team2Code = restData.team2Code;
+      }
+      if (restData.team1Id !== undefined) {
+        updateData.team1Id = restData.team1Id;
+      }
+      if (restData.team2Id !== undefined) {
+        updateData.team2Id = restData.team2Id;
+      }
+      if (restData.team1Score !== undefined) {
+        updateData.team1Score = restData.team1Score;
+      }
+      if (restData.team2Score !== undefined) {
+        updateData.team2Score = restData.team2Score;
+      }
+      if (restData.winnerId !== undefined) {
+        updateData.winnerId = restData.winnerId;
+      }
+
+      if (scheduledAt !== undefined) {
+        updateData.scheduledAt =
+          typeof scheduledAt === 'string' ? new Date(scheduledAt) : scheduledAt;
+      }
 
       const match = await MatchModel.update(matchId, updateData);
 
       logger.info(
         { matchId, userId: req.auth.userId, changes: result.data },
-        'Match updated'
+        'Match updated',
       );
 
       return this.success(res, match, 'Match updated successfully');
     } catch (error) {
       logger.error(
         { error, matchId: req.params['id'], userId: req.auth.userId },
-        'Error updating match'
+        'Error updating match',
       );
       return this.internalError(res, error);
     }
@@ -227,7 +254,7 @@ export class AdminController extends BaseController {
   // POST /admin/matches/:id/result - Record match result
   public recordMatchResult = async (
     req: Request,
-    res: Response
+    res: Response,
   ): Promise<Response> => {
     try {
       const matchNumber = parseInt(req.params['id'] || '');
@@ -274,18 +301,18 @@ export class AdminController extends BaseController {
           team1Score: result.data.team1Score,
           team2Score: result.data.team2Score,
         },
-        'Match result recorded and standings updated'
+        'Match result recorded and standings updated',
       );
 
       return this.success(
         res,
         updatedMatch,
-        'Match result recorded successfully'
+        'Match result recorded successfully',
       );
     } catch (error) {
       logger.error(
         { error, matchNumber: req.params['id'], userId: req.auth.userId },
-        'Error recording match result'
+        'Error recording match result',
       );
 
       const errorMessage =
@@ -305,7 +332,7 @@ export class AdminController extends BaseController {
   // GET /admin/tournament/settings - Get tournament settings
   public getTournamentSettings = async (
     req: Request,
-    res: Response
+    res: Response,
   ): Promise<Response> => {
     try {
       const settings = await TournamentSettingsService.getSettings();
@@ -313,7 +340,7 @@ export class AdminController extends BaseController {
     } catch (error) {
       logger.error(
         { error, userId: req.auth.userId },
-        'Error fetching tournament settings'
+        'Error fetching tournament settings',
       );
       return this.internalError(res, error);
     }
@@ -322,7 +349,7 @@ export class AdminController extends BaseController {
   // PUT /admin/tournament/top-scorer - Update actual top scorer
   public updateTopScorer = async (
     req: Request,
-    res: Response
+    res: Response,
   ): Promise<Response> => {
     try {
       const result = updateTopScorerSchema.safeParse(req.body);
@@ -330,28 +357,28 @@ export class AdminController extends BaseController {
         return this.badRequest(
           res,
           'Invalid top scorer data',
-          result.error.errors
+          result.error.errors,
         );
       }
 
       await TournamentSettingsService.setActualTopScorer(
-        result.data.playerName
+        result.data.playerName,
       );
 
       logger.info(
         { userId: req.auth.userId, playerName: result.data.playerName },
-        'Top scorer updated'
+        'Top scorer updated',
       );
 
       return this.success(
         res,
         { actualTopScorer: result.data.playerName },
-        'Top scorer updated successfully'
+        'Top scorer updated successfully',
       );
     } catch (error) {
       logger.error(
         { error, userId: req.auth.userId },
-        'Error updating top scorer'
+        'Error updating top scorer',
       );
       return this.internalError(res, error);
     }

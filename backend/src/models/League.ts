@@ -25,7 +25,7 @@ export class LeagueModel {
   static async create(
     name: string,
     description: string | null,
-    joinCode: string
+    joinCode: string,
   ): Promise<League> {
     return await prisma.league.create({
       data: {
@@ -86,7 +86,7 @@ export class LeagueModel {
 
   static async getUserMembership(
     leagueId: string,
-    userId: string
+    userId: string,
   ): Promise<LeagueMember | null> {
     return await prisma.leagueMember.findUnique({
       where: {
@@ -101,7 +101,7 @@ export class LeagueModel {
   static async addMember(
     leagueId: string,
     userId: string,
-    role: LeagueRole
+    role: LeagueRole,
   ): Promise<void> {
     await prisma.leagueMember.create({
       data: {
@@ -136,7 +136,7 @@ export class LeagueModel {
   }
 
   static async getLeagueMembers(
-    leagueId: string
+    leagueId: string,
   ): Promise<
     Array<LeagueMember & { user: { displayName: string; email: string } }>
   > {
@@ -169,7 +169,7 @@ export class LeagueModel {
     authorId: string,
     title: string,
     body: string,
-    pinned: boolean = false
+    pinned: boolean = false,
   ): Promise<LeagueMessage> {
     return await prisma.leagueMessage.create({
       data: {
@@ -197,7 +197,7 @@ export class LeagueModel {
   static async addToAllowList(
     leagueId: string,
     email: string,
-    role: LeagueRole
+    role: LeagueRole,
   ): Promise<void> {
     await prisma.leagueAllowEmail.upsert({
       where: {
@@ -217,7 +217,7 @@ export class LeagueModel {
 
   static async removeFromAllowList(
     leagueId: string,
-    email: string
+    email: string,
   ): Promise<void> {
     await prisma.leagueAllowEmail.delete({
       where: {

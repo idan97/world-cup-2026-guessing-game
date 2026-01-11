@@ -33,7 +33,21 @@ module.exports = [
     rules: {
       ...typescript.configs.recommended.rules,
       ...prettierConfig.rules,
-      'prettier/prettier': 'error',
+      'prettier/prettier': [
+        'error',
+        {
+          singleQuote: true,
+          trailingComma: 'all',
+          arrowParens: 'always',
+          bracketSpacing: true,
+          endOfLine: 'lf',
+          printWidth: 80,
+          semi: true,
+          tabWidth: 2,
+          useTabs: false,
+        },
+      ],
+      curly: ['error', 'all'],
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
       '@typescript-eslint/explicit-function-return-type': 'warn',
       '@typescript-eslint/no-explicit-any': 'warn',

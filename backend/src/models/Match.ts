@@ -30,7 +30,7 @@ export class MatchModel {
 
   // Get matches with flexible filters
   static async findWithFilters(
-    filters: MatchFilters
+    filters: MatchFilters,
   ): Promise<MatchWithRelations[]> {
     const { stage, groupLetter, upcoming, limit } = filters;
 
@@ -150,7 +150,7 @@ export class MatchModel {
       team2Score: number | null;
       winnerId: string | null;
       isFinished: boolean;
-    }>
+    }>,
   ): Promise<MatchWithRelations> {
     return await prisma.match.update({
       where: { id },
@@ -168,7 +168,7 @@ export class MatchModel {
     id: string,
     team1Score: number,
     team2Score: number,
-    winnerId: string | null
+    winnerId: string | null,
   ): Promise<MatchWithRelations> {
     return await prisma.match.update({
       where: { id },
@@ -201,7 +201,7 @@ export class MatchModel {
       team2Id?: string | null;
       venue?: string;
       venueCode?: number;
-    }>
+    }>,
   ): Promise<void> {
     await prisma.match.createMany({
       data: matches,

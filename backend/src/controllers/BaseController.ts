@@ -21,7 +21,7 @@ export abstract class BaseController {
   protected badRequest(
     res: Response,
     message?: string,
-    errors?: unknown
+    errors?: unknown,
   ): Response {
     return res.status(400).json({
       success: false,
@@ -61,7 +61,7 @@ export abstract class BaseController {
   protected internalError(
     res: Response,
     error?: unknown,
-    message?: string
+    message?: string,
   ): Response {
     logger.error({ error }, 'Internal server error');
     return res.status(500).json({

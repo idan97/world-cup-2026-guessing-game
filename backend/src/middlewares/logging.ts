@@ -4,7 +4,7 @@ import logger from '../logger';
 export const requestLogging = (
   req: Request,
   _res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): void => {
   logger.info(
     {
@@ -12,7 +12,7 @@ export const requestLogging = (
       url: req.url,
       userAgent: req.get('User-Agent'),
     },
-    'Incoming request'
+    'Incoming request',
   );
   next();
 };

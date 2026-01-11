@@ -16,7 +16,7 @@ export class MatchResultController extends BaseController {
    */
   public updateResult = async (
     req: Request,
-    res: Response
+    res: Response,
   ): Promise<Response> => {
     try {
       const matchId = req.params['matchId'];
@@ -31,7 +31,7 @@ export class MatchResultController extends BaseController {
         return this.badRequest(
           res,
           'Invalid request data',
-          result.error.errors
+          result.error.errors,
         );
       }
 
@@ -51,7 +51,7 @@ export class MatchResultController extends BaseController {
           team2Score,
           userId: req.auth?.userId,
         },
-        'Match result updated'
+        'Match result updated',
       );
 
       return this.success(res, {
@@ -63,7 +63,7 @@ export class MatchResultController extends BaseController {
     } catch (error) {
       logger.error(
         { error, matchId: req.params['matchId'], userId: req.auth?.userId },
-        'Error updating match result'
+        'Error updating match result',
       );
 
       const errorMessage =

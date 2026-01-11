@@ -20,13 +20,13 @@ router.get(
   '/:id/leaderboard',
   validateLeagueId,
   requireLeagueMembership,
-  leagueController.getLeagueLeaderboard
+  leagueController.getLeagueLeaderboard,
 );
 router.get(
   '/:id/messages',
   validateLeagueId,
   requireLeagueMembership,
-  leagueController.getLeagueMessages
+  leagueController.getLeagueMessages,
 );
 
 // League admin routes (require admin role)
@@ -34,31 +34,31 @@ router.post(
   '/:id/messages',
   validateLeagueId,
   requireLeagueAdmin,
-  leagueController.createLeagueMessage
+  leagueController.createLeagueMessage,
 );
 router.get(
   '/:id/members',
   validateLeagueId,
   requireLeagueAdmin,
-  leagueController.getLeagueMembers
+  leagueController.getLeagueMembers,
 );
 router.delete(
   '/:id/members/:uid',
   validateLeagueId,
   requireLeagueAdmin,
-  leagueController.removeMember
+  leagueController.removeMember,
 );
 router.post(
   '/:id/join-code/rotate',
   validateLeagueId,
   requireLeagueAdmin,
-  leagueController.rotateJoinCode
+  leagueController.rotateJoinCode,
 );
 router.post(
   '/:id/allow',
   validateLeagueId,
   requireLeagueAdmin,
-  leagueController.addAllowEmail
+  leagueController.addAllowEmail,
 );
 
 export default router;

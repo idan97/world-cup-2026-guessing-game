@@ -32,7 +32,7 @@ const matchPickSchema = z
     },
     {
       message: 'Predicted outcome must match the predicted scores',
-    }
+    },
   );
 
 const advancePickSchema = z.object({
@@ -78,7 +78,7 @@ export class FormController extends BaseController {
     } catch (error) {
       logger.error(
         { error, userId: req.auth.userId },
-        'Error fetching user form'
+        'Error fetching user form',
       );
       return this.internalError(res, error);
     }
@@ -92,7 +92,7 @@ export class FormController extends BaseController {
     } catch (error) {
       logger.error(
         { error, formId: req.params['id'], userId: req.auth.userId },
-        'Error fetching form'
+        'Error fetching form',
       );
       return this.internalError(res, error);
     }
@@ -101,7 +101,7 @@ export class FormController extends BaseController {
   // GET /forms/:id/with-picks - Get form with all picks
   public getFormWithPicks = async (
     req: Request,
-    res: Response
+    res: Response,
   ): Promise<Response> => {
     try {
       const formId = req.form!['id'];
@@ -115,7 +115,7 @@ export class FormController extends BaseController {
     } catch (error) {
       logger.error(
         { error, formId: req.params['id'], userId: req.auth.userId },
-        'Error fetching form with picks'
+        'Error fetching form with picks',
       );
       return this.internalError(res, error);
     }
@@ -124,7 +124,7 @@ export class FormController extends BaseController {
   // POST /forms - Create new form
   public createForm = async (
     req: Request,
-    res: Response
+    res: Response,
   ): Promise<Response> => {
     try {
       const result = createFormSchema.safeParse(req.body);
@@ -167,7 +167,7 @@ export class FormController extends BaseController {
 
       logger.info(
         { formId: form.id, userId, nickname: form.nickname },
-        'New form created'
+        'New form created',
       );
 
       return this.created(res, form, 'Form created successfully');
@@ -180,7 +180,7 @@ export class FormController extends BaseController {
   // PUT /forms/:id - Update form basic info
   public updateForm = async (
     req: Request,
-    res: Response
+    res: Response,
   ): Promise<Response> => {
     try {
       const result = updateFormSchema.safeParse(req.body);
@@ -195,14 +195,14 @@ export class FormController extends BaseController {
 
       logger.info(
         { formId, userId: req.auth.userId, changes: result.data },
-        'Form updated'
+        'Form updated',
       );
 
       return this.success(res, updatedForm, 'Form updated successfully');
     } catch (error) {
       logger.error(
         { error, formId: req.params['id'], userId: req.auth.userId },
-        'Error updating form'
+        'Error updating form',
       );
       return this.internalError(res, error);
     }
@@ -211,7 +211,7 @@ export class FormController extends BaseController {
   // PUT /forms/:id/picks - Save picks
   public updatePicks = async (
     req: Request,
-    res: Response
+    res: Response,
   ): Promise<Response> => {
     try {
       const result = picksSchema.safeParse(req.body);
@@ -230,7 +230,7 @@ export class FormController extends BaseController {
           const missingIds = matchIds.filter((id) => !foundIds.includes(id));
           return this.badRequest(
             res,
-            `Invalid match IDs: ${missingIds.join(', ')}`
+            `Invalid match IDs: ${missingIds.join(', ')}`,
           );
         }
       }
@@ -251,7 +251,7 @@ export class FormController extends BaseController {
           const missingIds = teamIds.filter((id) => !foundIds.includes(id));
           return this.badRequest(
             res,
-            `Invalid team IDs: ${missingIds.join(', ')}`
+            `Invalid team IDs: ${missingIds.join(', ')}`,
           );
         }
       }
@@ -284,14 +284,14 @@ export class FormController extends BaseController {
             topScorerPicks: result.data.topScorerPicks?.length || 0,
           },
         },
-        'Form picks updated'
+        'Form picks updated',
       );
 
       return this.success(res, { formId, message: 'Picks saved successfully' });
     } catch (error) {
       logger.error(
         { error, formId: req.params['id'], userId: req.auth.userId },
-        'Error updating picks'
+        'Error updating picks',
       );
       return this.internalError(res, error);
     }
@@ -300,7 +300,7 @@ export class FormController extends BaseController {
   // POST /forms/:id/submit - Mark form as submitted
   public submitForm = async (
     req: Request,
-    res: Response
+    res: Response,
   ): Promise<Response> => {
     try {
       const formId = req.form!['id'];
@@ -320,7 +320,7 @@ export class FormController extends BaseController {
     } catch (error) {
       logger.error(
         { error, formId: req.params['id'], userId: req.auth.userId },
-        'Error submitting form'
+        'Error submitting form',
       );
       return this.internalError(res, error);
     }
@@ -329,7 +329,7 @@ export class FormController extends BaseController {
   // DELETE /forms/:id - Delete form
   public deleteForm = async (
     req: Request,
-    res: Response
+    res: Response,
   ): Promise<Response> => {
     try {
       const formId = req.form!.id;
@@ -342,7 +342,7 @@ export class FormController extends BaseController {
     } catch (error) {
       logger.error(
         { error, formId: req.params['id'], userId: req.auth.userId },
-        'Error deleting form'
+        'Error deleting form',
       );
       return this.internalError(res, error);
     }

@@ -26,7 +26,7 @@ export class StandingsController extends BaseController {
    */
   public getAllStandings = async (
     req: Request,
-    res: Response
+    res: Response,
   ): Promise<Response> => {
     try {
       // Parse group query params (can be single or array)
@@ -47,12 +47,12 @@ export class StandingsController extends BaseController {
 
         // Validate group letters
         const invalidGroups = groupLetters.filter(
-          (g) => !VALID_GROUPS.includes(g.toUpperCase())
+          (g) => !VALID_GROUPS.includes(g.toUpperCase()),
         );
         if (invalidGroups.length > 0) {
           return this.badRequest(
             res,
-            `Invalid group letters: ${invalidGroups.join(', ')}. Valid groups: ${VALID_GROUPS.join(', ')}`
+            `Invalid group letters: ${invalidGroups.join(', ')}. Valid groups: ${VALID_GROUPS.join(', ')}`,
           );
         }
 
@@ -78,7 +78,7 @@ export class StandingsController extends BaseController {
           groupsRequested: groupLetters?.length || 'all',
           totalStandings: standings.length,
         },
-        'Fetched group standings'
+        'Fetched group standings',
       );
 
       return this.success(res, {
@@ -100,7 +100,7 @@ export class StandingsController extends BaseController {
    */
   public getGroupStandings = async (
     req: Request,
-    res: Response
+    res: Response,
   ): Promise<Response> => {
     try {
       const groupLetter = req.params['groupLetter']?.toUpperCase();
@@ -108,7 +108,7 @@ export class StandingsController extends BaseController {
       if (!groupLetter || !VALID_GROUPS.includes(groupLetter)) {
         return this.badRequest(
           res,
-          `Invalid group letter: ${groupLetter}. Valid groups: ${VALID_GROUPS.join(', ')}`
+          `Invalid group letter: ${groupLetter}. Valid groups: ${VALID_GROUPS.join(', ')}`,
         );
       }
 
@@ -117,13 +117,13 @@ export class StandingsController extends BaseController {
       if (standings.length === 0) {
         return this.notFound(
           res,
-          `No standings found for group ${groupLetter}`
+          `No standings found for group ${groupLetter}`,
         );
       }
 
       logger.info(
         { groupLetter, standingsCount: standings.length },
-        'Fetched single group standings'
+        'Fetched single group standings',
       );
 
       return this.success(res, {
@@ -133,7 +133,7 @@ export class StandingsController extends BaseController {
     } catch (error) {
       logger.error(
         { error, groupLetter: req.params['groupLetter'] },
-        'Error fetching single group standings'
+        'Error fetching single group standings',
       );
       return this.internalError(res, error);
     }
@@ -145,14 +145,14 @@ export class StandingsController extends BaseController {
    */
   public getThirdPlaceRankings = async (
     _req: Request,
-    res: Response
+    res: Response,
   ): Promise<Response> => {
     try {
       const rankings = await GroupStandingModel.getThirdPlaceRankings();
 
       logger.info(
         { rankingsCount: rankings.length },
-        'Fetched third place rankings'
+        'Fetched third place rankings',
       );
 
       return this.success(res, rankings);

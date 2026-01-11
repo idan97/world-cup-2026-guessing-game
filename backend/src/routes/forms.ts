@@ -20,7 +20,7 @@ router.get(
   '/:id',
   validateFormId,
   requireFormOwnership,
-  formController.getForm
+  formController.getForm,
 );
 
 // GET /forms/:id/with-picks - Get form with all picks
@@ -28,7 +28,7 @@ router.get(
   '/:id/with-picks',
   validateFormId,
   requireFormOwnership,
-  formController.getFormWithPicks
+  formController.getFormWithPicks,
 );
 
 // PUT /forms/:id - Update form basic info (nickname, etc.)
@@ -37,7 +37,7 @@ router.put(
   validateFormId,
   requireFormOwnership,
   preventFinalFormModification,
-  formController.updateForm
+  formController.updateForm,
 );
 
 // PUT /forms/:id/picks - Save picks (match, advance, top scorer)
@@ -46,7 +46,7 @@ router.put(
   validateFormId,
   requireFormOwnership,
   preventFinalFormModification,
-  formController.updatePicks
+  formController.updatePicks,
 );
 
 // POST /forms/:id/submit - Mark form as submitted/final
@@ -54,7 +54,7 @@ router.post(
   '/:id/submit',
   validateFormId,
   requireFormOwnership,
-  formController.submitForm
+  formController.submitForm,
 );
 
 // DELETE /forms/:id - Delete form (allows user to recreate)
@@ -63,7 +63,7 @@ router.delete(
   validateFormId,
   requireFormOwnership,
   preventFinalFormModification,
-  formController.deleteForm
+  formController.deleteForm,
 );
 
 export default router;

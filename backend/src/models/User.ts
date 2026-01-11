@@ -22,7 +22,7 @@ export class UserModel {
   static async create(
     userId: string,
     email: string,
-    displayName: string
+    displayName: string,
   ): Promise<void> {
     await prisma.user.create({
       data: {
@@ -37,7 +37,7 @@ export class UserModel {
   static async update(
     userId: string,
     email: string,
-    displayName: string
+    displayName: string,
   ): Promise<void> {
     await prisma.user.update({
       where: { id: userId },

@@ -6,7 +6,7 @@ import { LeagueRole } from '@prisma/client';
 export const validateLeagueId = (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): void => {
   const { id } = req.params;
 
@@ -28,7 +28,7 @@ export const validateLeagueId = (
 export const requireLeagueMembership = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const leagueId = req.league!.id;
@@ -62,7 +62,7 @@ export const requireLeagueMembership = async (
 export const requireLeagueAdmin = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const leagueId = req.league!.id;

@@ -11,7 +11,7 @@ import { LeagueRole } from '@prisma/client';
 if (config.clerkSecretKey) {
   console.log(
     '[Clerk] Secret key loaded:',
-    config.clerkSecretKey.substring(0, 15) + '...'
+    config.clerkSecretKey.substring(0, 15) + '...',
   );
 } else {
   console.error('[Clerk] WARNING: No CLERK_SECRET_KEY configured!');
@@ -26,7 +26,7 @@ export const clerk = clerkMiddleware({
 export const syncUser = async (
   req: Request,
   _res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const { userId, sessionClaims } = req.auth;
@@ -57,7 +57,7 @@ export const syncUser = async (
     const { isNewUser } = await syncUserFromClerk(
       userId,
       email as string,
-      name as string
+      name as string,
     );
 
     if (isNewUser) {
@@ -68,7 +68,7 @@ export const syncUser = async (
   } catch (error) {
     logger.error(
       { error, userId: req.auth?.userId },
-      'Error in user sync middleware'
+      'Error in user sync middleware',
     );
     next(error);
   }
@@ -78,7 +78,7 @@ export const syncUser = async (
 async function syncUserFromClerk(
   userId: string,
   email: string,
-  displayName: string
+  displayName: string,
 ): Promise<{ isNewUser: boolean }> {
   try {
     const existingUser = await UserModel.findByIdWithGeneralLeague(userId);
@@ -115,7 +115,7 @@ async function provisionNewUser(userId: string, email: string): Promise<void> {
 
       logger.info(
         { userId, leagueId: row.leagueId, role: row.role },
-        'User added to pre-approved league'
+        'User added to pre-approved league',
       );
     }
 

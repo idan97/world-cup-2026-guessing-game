@@ -11,7 +11,7 @@ export class GroupStandingModel {
    * @param groupLetters - Array of group letters (e.g., ['A', 'B']) or undefined for all
    */
   static async findByGroups(
-    groupLetters?: string[]
+    groupLetters?: string[],
   ): Promise<GroupStandingWithTeam[]> {
     const where: Prisma.GroupStandingWhereInput = groupLetters
       ? { groupLetter: { in: groupLetters } }

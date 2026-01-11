@@ -44,13 +44,13 @@ export interface LeaderboardEntry {
  * @returns טבלת ניקוד מלאה עם דירוג
  */
 export async function simulateLeagueScoring(
-  input: SimulationInput
+  input: SimulationInput,
 ): Promise<LeaderboardEntry[]> {
   const { leagueId, simulatedResults, actualTopScorer } = input;
 
   logger.info(
     { leagueId, resultsCount: simulatedResults.length },
-    'Starting simulation for league'
+    'Starting simulation for league',
   );
 
   // שלב 1: אימות ליגה וקבלת כל החברים
@@ -110,14 +110,14 @@ export async function simulateLeagueScoring(
       const scoreResult = await calculateSimulatedScore(
         form.id,
         simulatedMatchMap,
-        actualTopScorer
+        actualTopScorer,
       );
 
       // חישוב שוברי שוויון מדומים
       const tiebreakers = await calculateSimulatedTiebreakers(
         form.id,
         simulatedMatchMap,
-        actualTopScorer
+        actualTopScorer,
       );
 
       leaderboardEntries.push({
@@ -132,7 +132,7 @@ export async function simulateLeagueScoring(
     } catch (error) {
       logger.error(
         { error, formId: form.id, userId: member.userId },
-        'Error calculating simulated score for form'
+        'Error calculating simulated score for form',
       );
       // ממשיכים לטופס הבא במקרה של שגיאה
     }
@@ -185,7 +185,7 @@ export async function simulateLeagueScoring(
 
   logger.info(
     { leagueId, entriesCount: leaderboardEntries.length },
-    'Simulation completed successfully'
+    'Simulation completed successfully',
   );
 
   return leaderboardEntries;
@@ -198,7 +198,7 @@ export async function simulateLeagueScoring(
 async function calculateSimulatedScore(
   formId: string,
   simulatedMatchMap: Map<string, SimulatedMatchResult>,
-  actualTopScorer: string | null = null
+  actualTopScorer: string | null = null,
 ): Promise<{
   totalPoints: number;
   breakdown: {
@@ -269,7 +269,7 @@ function calculateMatchScoreFromSimulation(
     predScoreA: number;
     predScoreB: number;
   },
-  simulatedResult: SimulatedMatchResult
+  simulatedResult: SimulatedMatchResult,
 ): number {
   const match = pick.match;
 
@@ -378,7 +378,7 @@ export async function getAllLeaguePredictions(leagueId: string): Promise<{
 
   logger.info(
     { leagueId, formsCount: result.length },
-    'Retrieved all league predictions'
+    'Retrieved all league predictions',
   );
 
   return { forms: result };
@@ -387,7 +387,7 @@ export async function getAllLeaguePredictions(leagueId: string): Promise<{
 async function calculateSimulatedTiebreakers(
   formId: string,
   simulatedMatchMap: Map<string, SimulatedMatchResult>,
-  actualTopScorer: string | null = null
+  actualTopScorer: string | null = null,
 ): Promise<{
   exactResults: number;
   correctDecisions: number;

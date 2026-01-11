@@ -1,5 +1,10 @@
 import prisma from '../db';
+import type { Prisma } from '@prisma/client';
 import type { Form, MatchPick, AdvancePick } from '../types';
+
+type FormWithPicks = Prisma.FormGetPayload<{
+  include: { matchPicks: true; advancePicks: true; topScorerPicks: true };
+}>;
 
 export class FormModel {
   // Basic CRUD operations
@@ -44,14 +49,7 @@ export class FormModel {
   }
 
   // Get form with full details including picks
-  static async getFormWithPicks(id: string): Promise<
-    | (Form & {
-        matchPicks: MatchPick[];
-        advancePicks: AdvancePick[];
-        topScorerPicks: { formId: string; playerName: string }[];
-      })
-    | null
-  > {
+  static async getFormWithPicks(id: string): Promise<FormWithPicks | null> {
     return await prisma.form.findUnique({
       where: { id },
       include: {
@@ -76,7 +74,7 @@ export class FormModel {
   // Save match picks (upsert)
   static async saveMatchPicks(
     formId: string,
-    matchPicks: MatchPick[]
+    matchPicks: MatchPick[],
   ): Promise<void> {
     // Delete existing match picks for this form
     await prisma.matchPick.deleteMany({
@@ -94,7 +92,7 @@ export class FormModel {
   // Save advance picks (upsert)
   static async saveAdvancePicks(
     formId: string,
-    advancePicks: AdvancePick[]
+    advancePicks: AdvancePick[],
   ): Promise<void> {
     // Delete existing advance picks for this form
     await prisma.advancePick.deleteMany({
@@ -112,7 +110,7 @@ export class FormModel {
   // Save top scorer pick (upsert)
   static async saveTopScorerPick(
     formId: string,
-    playerName: string
+    playerName: string,
   ): Promise<void> {
     await prisma.topScorerPick.upsert({
       where: { formId },
@@ -125,10 +123,10 @@ export class FormModel {
   static async savePicks(
     formId: string,
     picks: {
-      matchPicks?: MatchPick[];
-      advancePicks?: AdvancePick[];
-      topScorerPicks?: Array<{ playerName: string }>;
-    }
+      matchPicks?: MatchPick[] | undefined;
+      advancePicks?: AdvancePick[] | undefined;
+      topScorerPicks?: Array<{ playerName: string }> | undefined;
+    },
   ): Promise<void> {
     await prisma.$transaction(async (tx) => {
       // Save match picks

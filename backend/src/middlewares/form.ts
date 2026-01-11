@@ -5,7 +5,7 @@ import { FormModel } from '../models/Form';
 export const validateFormId = (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): void => {
   const { id } = req.params;
 
@@ -27,7 +27,7 @@ export const validateFormId = (
 export const requireFormOwnership = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const formId = req.form!.id;
@@ -69,7 +69,7 @@ export const requireFormOwnership = async (
 export const preventFinalFormModification = (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): void => {
   const form = req.form!.data!;
 

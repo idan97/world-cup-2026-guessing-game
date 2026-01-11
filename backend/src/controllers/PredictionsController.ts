@@ -40,7 +40,7 @@ export class PredictionsController extends BaseController {
    */
   public createMatchPredictions = async (
     req: Request,
-    res: Response
+    res: Response,
   ): Promise<Response> => {
     try {
       const result = bulkMatchPredictionsSchema.safeParse(req.body);
@@ -48,7 +48,7 @@ export class PredictionsController extends BaseController {
         return this.badRequest(
           res,
           'Invalid predictions data',
-          result.error.errors
+          result.error.errors,
         );
       }
 
@@ -59,7 +59,7 @@ export class PredictionsController extends BaseController {
       if (!form) {
         return this.badRequest(
           res,
-          'User does not have a form. Please create a form first.'
+          'User does not have a form. Please create a form first.',
         );
       }
 
@@ -77,7 +77,7 @@ export class PredictionsController extends BaseController {
         const missingIds = matchIds.filter((id) => !foundIds.includes(id));
         return this.badRequest(
           res,
-          `Invalid match IDs: ${missingIds.join(', ')}`
+          `Invalid match IDs: ${missingIds.join(', ')}`,
         );
       }
 
@@ -111,7 +111,7 @@ export class PredictionsController extends BaseController {
           userId,
           predictionsCount: matchPicks.length,
         },
-        'Match predictions saved'
+        'Match predictions saved',
       );
 
       return this.success(res, {
@@ -121,7 +121,7 @@ export class PredictionsController extends BaseController {
     } catch (error) {
       logger.error(
         { error, userId: req.auth.userId },
-        'Error saving match predictions'
+        'Error saving match predictions',
       );
       return this.internalError(res, error);
     }
@@ -133,7 +133,7 @@ export class PredictionsController extends BaseController {
    */
   public createAdvancePredictions = async (
     req: Request,
-    res: Response
+    res: Response,
   ): Promise<Response> => {
     try {
       const result = advancePredictionsSchema.safeParse(req.body);
@@ -141,7 +141,7 @@ export class PredictionsController extends BaseController {
         return this.badRequest(
           res,
           'Invalid predictions data',
-          result.error.errors
+          result.error.errors,
         );
       }
 
@@ -152,7 +152,7 @@ export class PredictionsController extends BaseController {
       if (!form) {
         return this.badRequest(
           res,
-          'User does not have a form. Please create a form first.'
+          'User does not have a form. Please create a form first.',
         );
       }
 
@@ -178,7 +178,7 @@ export class PredictionsController extends BaseController {
         const missingIds = teamIds.filter((id) => !foundIds.includes(id));
         return this.badRequest(
           res,
-          `Invalid team IDs: ${missingIds.join(', ')}`
+          `Invalid team IDs: ${missingIds.join(', ')}`,
         );
       }
 
@@ -199,7 +199,7 @@ export class PredictionsController extends BaseController {
           userId,
           predictionsCount: advancePicks.length,
         },
-        'Advance predictions saved'
+        'Advance predictions saved',
       );
 
       return this.success(res, {
@@ -209,7 +209,7 @@ export class PredictionsController extends BaseController {
     } catch (error) {
       logger.error(
         { error, userId: req.auth.userId },
-        'Error saving advance predictions'
+        'Error saving advance predictions',
       );
       return this.internalError(res, error);
     }
@@ -221,7 +221,7 @@ export class PredictionsController extends BaseController {
    */
   public createTopScorerPrediction = async (
     req: Request,
-    res: Response
+    res: Response,
   ): Promise<Response> => {
     try {
       const result = topScorerPredictionSchema.safeParse(req.body);
@@ -229,7 +229,7 @@ export class PredictionsController extends BaseController {
         return this.badRequest(
           res,
           'Invalid prediction data',
-          result.error.errors
+          result.error.errors,
         );
       }
 
@@ -240,7 +240,7 @@ export class PredictionsController extends BaseController {
       if (!form) {
         return this.badRequest(
           res,
-          'User does not have a form. Please create a form first.'
+          'User does not have a form. Please create a form first.',
         );
       }
 
@@ -253,7 +253,6 @@ export class PredictionsController extends BaseController {
       await FormModel.savePicks(form.id, {
         topScorerPicks: [
           {
-            formId: form.id,
             playerName: result.data.playerName,
           },
         ],
@@ -265,7 +264,7 @@ export class PredictionsController extends BaseController {
           userId,
           playerName: result.data.playerName,
         },
-        'Top scorer prediction saved'
+        'Top scorer prediction saved',
       );
 
       return this.success(res, {
@@ -275,7 +274,7 @@ export class PredictionsController extends BaseController {
     } catch (error) {
       logger.error(
         { error, userId: req.auth.userId },
-        'Error saving top scorer prediction'
+        'Error saving top scorer prediction',
       );
       return this.internalError(res, error);
     }
@@ -287,7 +286,7 @@ export class PredictionsController extends BaseController {
    */
   public getMyPredictions = async (
     req: Request,
-    res: Response
+    res: Response,
   ): Promise<Response> => {
     try {
       const userId = req.auth.userId;
@@ -306,14 +305,14 @@ export class PredictionsController extends BaseController {
           formId: form.id,
           userId,
         },
-        'Fetched user predictions'
+        'Fetched user predictions',
       );
 
       return this.success(res, formWithPicks);
     } catch (error) {
       logger.error(
         { error, userId: req.auth.userId },
-        'Error fetching user predictions'
+        'Error fetching user predictions',
       );
       return this.internalError(res, error);
     }

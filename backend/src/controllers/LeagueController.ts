@@ -32,7 +32,7 @@ export class LeagueController extends BaseController {
   // GET /leagues - List user's leagues
   public getMyLeagues = async (
     req: Request,
-    res: Response
+    res: Response,
   ): Promise<Response> => {
     try {
       const userId = req.auth.userId;
@@ -58,7 +58,7 @@ export class LeagueController extends BaseController {
   // POST /leagues - Create new league
   public createLeague = async (
     req: Request,
-    res: Response
+    res: Response,
   ): Promise<Response> => {
     try {
       const result = createLeagueSchema.safeParse(req.body);
@@ -73,7 +73,7 @@ export class LeagueController extends BaseController {
       const league = await LeagueModel.create(
         result.data.name,
         result.data.description || null,
-        joinCode
+        joinCode,
       );
 
       // Add creator as admin
@@ -81,7 +81,7 @@ export class LeagueController extends BaseController {
 
       logger.info(
         { leagueId: league.id, userId, name: league.name },
-        'New league created'
+        'New league created',
       );
       return this.created(res, league, 'League created successfully');
     } catch (error) {
@@ -92,7 +92,7 @@ export class LeagueController extends BaseController {
   // POST /leagues/:code/join - Join league by code
   public joinLeague = async (
     req: Request,
-    res: Response
+    res: Response,
   ): Promise<Response> => {
     try {
       const { code } = req.params;
@@ -111,7 +111,7 @@ export class LeagueController extends BaseController {
       // Check if already a member
       const existingMembership = await LeagueModel.getUserMembership(
         league.id,
-        userId
+        userId,
       );
       if (existingMembership) {
         return this.conflict(res, 'Already a member of this league');
@@ -122,14 +122,14 @@ export class LeagueController extends BaseController {
 
       logger.info(
         { leagueId: league.id, userId, joinCode: code },
-        'User joined league'
+        'User joined league',
       );
 
       return this.success(res, league, 'Successfully joined league');
     } catch (error) {
       logger.error(
         { error, userId: req.auth.userId, joinCode: req.params['code'] },
-        'Error joining league'
+        'Error joining league',
       );
       return this.internalError(res, error);
     }
@@ -138,7 +138,7 @@ export class LeagueController extends BaseController {
   // GET /leagues/:id/messages - Get league messages
   public getLeagueMessages = async (
     req: Request,
-    res: Response
+    res: Response,
   ): Promise<Response> => {
     try {
       const leagueId = req.league!.id;
@@ -152,7 +152,7 @@ export class LeagueController extends BaseController {
   // POST /leagues/:id/messages - Create league message (ADMIN only)
   public createLeagueMessage = async (
     req: Request,
-    res: Response
+    res: Response,
   ): Promise<Response> => {
     try {
       const leagueId = req.league!.id;
@@ -163,7 +163,7 @@ export class LeagueController extends BaseController {
         return this.badRequest(
           res,
           'Invalid message data',
-          result.error.errors
+          result.error.errors,
         );
       }
 
@@ -172,12 +172,12 @@ export class LeagueController extends BaseController {
         userId,
         result.data.title,
         result.data.body,
-        result.data.pinned
+        result.data.pinned,
       );
 
       logger.info(
         { leagueId, messageId: message.id, userId },
-        'League message created'
+        'League message created',
       );
 
       return this.created(res, message, 'Message created successfully');
@@ -189,7 +189,7 @@ export class LeagueController extends BaseController {
   // GET /leagues/:id/members - List league members (ADMIN only)
   public getLeagueMembers = async (
     req: Request,
-    res: Response
+    res: Response,
   ): Promise<Response> => {
     try {
       const leagueId = req.league!.id;
@@ -203,7 +203,7 @@ export class LeagueController extends BaseController {
   // DELETE /leagues/:id/members/:uid - Remove member (ADMIN only)
   public removeMember = async (
     req: Request,
-    res: Response
+    res: Response,
   ): Promise<Response> => {
     try {
       const leagueId = req.league!.id;
@@ -222,7 +222,7 @@ export class LeagueController extends BaseController {
       // Check if target user is a member
       const targetMembership = await LeagueModel.getUserMembership(
         leagueId,
-        uid
+        uid,
       );
       if (!targetMembership) {
         return this.notFound(res, 'Member not found');
@@ -233,7 +233,7 @@ export class LeagueController extends BaseController {
 
       logger.info(
         { leagueId, adminUserId: userId, targetUserId: uid },
-        'Member removed from league'
+        'Member removed from league',
       );
 
       return this.success(res, null, 'Member removed successfully');
@@ -245,7 +245,7 @@ export class LeagueController extends BaseController {
           adminUserId: req.auth.userId,
           targetUserId: req.params['uid'],
         },
-        'Error removing member'
+        'Error removing member',
       );
       return this.internalError(res, error);
     }
@@ -254,7 +254,7 @@ export class LeagueController extends BaseController {
   // POST /leagues/:id/join-code/rotate - Generate new join code (ADMIN only)
   public rotateJoinCode = async (
     req: Request,
-    res: Response
+    res: Response,
   ): Promise<Response> => {
     try {
       const leagueId = req.league!.id;
@@ -265,13 +265,13 @@ export class LeagueController extends BaseController {
 
       logger.info(
         { leagueId, userId, newJoinCode },
-        'League join code rotated'
+        'League join code rotated',
       );
 
       return this.success(
         res,
         { joinCode: newJoinCode },
-        'Join code updated successfully'
+        'Join code updated successfully',
       );
     } catch (error) {
       return this.internalError(res, error);
@@ -281,7 +281,7 @@ export class LeagueController extends BaseController {
   // POST /leagues/:id/allow - Add email to allow list (ADMIN only)
   public addAllowEmail = async (
     req: Request,
-    res: Response
+    res: Response,
   ): Promise<Response> => {
     try {
       const leagueId = req.league!.id;
@@ -295,7 +295,7 @@ export class LeagueController extends BaseController {
       await LeagueModel.addToAllowList(
         leagueId,
         result.data.email,
-        result.data.role
+        result.data.role,
       );
 
       logger.info(
@@ -305,7 +305,7 @@ export class LeagueController extends BaseController {
           email: result.data.email,
           role: result.data.role,
         },
-        'Email added to league allow list'
+        'Email added to league allow list',
       );
 
       return this.success(res, null, 'Email added to allow list');
@@ -317,7 +317,7 @@ export class LeagueController extends BaseController {
   // GET /leagues/:id/leaderboard - Get league leaderboard with tiebreakers
   public getLeagueLeaderboard = async (
     req: Request,
-    res: Response
+    res: Response,
   ): Promise<Response> => {
     try {
       const leagueId = req.league!.id;
@@ -359,7 +359,7 @@ export class LeagueController extends BaseController {
         // Calculate tiebreaker statistics
         const tiebreakers = await calculateTiebreakers(
           form.id,
-          actualTopScorer
+          actualTopScorer,
         );
 
         leaderboardEntries.push({
@@ -431,7 +431,7 @@ export class LeagueController extends BaseController {
     } catch (error) {
       logger.error(
         { error, leagueId: req.league?.id },
-        'Error fetching league leaderboard'
+        'Error fetching league leaderboard',
       );
       return this.internalError(res, error);
     }

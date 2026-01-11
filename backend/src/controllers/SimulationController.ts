@@ -33,7 +33,7 @@ export class SimulationController extends BaseController {
    */
   public calculateSimulation = async (
     req: Request,
-    res: Response
+    res: Response,
   ): Promise<Response> => {
     try {
       // אימות נתונים
@@ -42,7 +42,7 @@ export class SimulationController extends BaseController {
         return this.badRequest(
           res,
           'Invalid simulation data',
-          result.error.errors
+          result.error.errors,
         );
       }
 
@@ -54,7 +54,7 @@ export class SimulationController extends BaseController {
           resultsCount: simulatedResults.length,
           userId: req.auth?.userId,
         },
-        'Calculating simulation'
+        'Calculating simulation',
       );
 
       // חישוב הסימולציה
@@ -69,7 +69,7 @@ export class SimulationController extends BaseController {
           leagueId,
           entriesCount: leaderboard.length,
         },
-        'Simulation calculated successfully'
+        'Simulation calculated successfully',
       );
 
       return this.success(res, {
@@ -84,7 +84,7 @@ export class SimulationController extends BaseController {
           userId: req.auth?.userId,
           body: req.body,
         },
-        'Error calculating simulation'
+        'Error calculating simulation',
       );
 
       // טיפול בשגיאות ספציפיות
@@ -107,7 +107,7 @@ export class SimulationController extends BaseController {
    */
   public calculateLeagueSimulation = async (
     req: Request,
-    res: Response
+    res: Response,
   ): Promise<Response> => {
     try {
       const leagueId = req.params['id'];
@@ -126,7 +126,7 @@ export class SimulationController extends BaseController {
         return this.badRequest(
           res,
           'Invalid simulation data',
-          result.error.errors
+          result.error.errors,
         );
       }
 
@@ -138,7 +138,7 @@ export class SimulationController extends BaseController {
           resultsCount: simulatedResults.length,
           userId: req.auth?.userId,
         },
-        'Calculating league simulation'
+        'Calculating league simulation',
       );
 
       // חישוב הסימולציה
@@ -153,7 +153,7 @@ export class SimulationController extends BaseController {
           leagueId,
           entriesCount: leaderboard.length,
         },
-        'League simulation calculated successfully'
+        'League simulation calculated successfully',
       );
 
       return this.success(res, {
@@ -168,7 +168,7 @@ export class SimulationController extends BaseController {
           userId: req.auth?.userId,
           leagueId: req.params['id'],
         },
-        'Error calculating league simulation'
+        'Error calculating league simulation',
       );
 
       const errorMessage =
@@ -190,7 +190,7 @@ export class SimulationController extends BaseController {
    */
   public getLeaguePredictions = async (
     req: Request,
-    res: Response
+    res: Response,
   ): Promise<Response> => {
     try {
       const leagueId = req.params['id'];
@@ -203,7 +203,7 @@ export class SimulationController extends BaseController {
           leagueId,
           userId: req.auth?.userId,
         },
-        'Fetching all league predictions for simulation'
+        'Fetching all league predictions for simulation',
       );
 
       const result = await getAllLeaguePredictions(leagueId);
@@ -213,7 +213,7 @@ export class SimulationController extends BaseController {
           leagueId,
           formsCount: result.forms.length,
         },
-        'League predictions fetched successfully'
+        'League predictions fetched successfully',
       );
 
       return this.success(res, result);
@@ -224,7 +224,7 @@ export class SimulationController extends BaseController {
           userId: req.auth?.userId,
           leagueId: req.params['id'],
         },
-        'Error fetching league predictions'
+        'Error fetching league predictions',
       );
 
       const errorMessage =
@@ -243,7 +243,7 @@ export class SimulationController extends BaseController {
    */
   public getMySimulation = async (
     req: Request,
-    res: Response
+    res: Response,
   ): Promise<Response> => {
     try {
       const userId = req.auth?.userId;
@@ -255,7 +255,7 @@ export class SimulationController extends BaseController {
         {
           userId,
         },
-        'Fetching user simulation'
+        'Fetching user simulation',
       );
 
       const simulation = await prisma.simulation.findUnique({
@@ -272,7 +272,7 @@ export class SimulationController extends BaseController {
           userId,
           simulationId: simulation.id,
         },
-        'User simulation fetched successfully'
+        'User simulation fetched successfully',
       );
 
       return this.success(res, { simulation });
@@ -282,7 +282,7 @@ export class SimulationController extends BaseController {
           error,
           userId: req.auth?.userId,
         },
-        'Error fetching user simulation'
+        'Error fetching user simulation',
       );
 
       return this.internalError(res, error);
@@ -295,7 +295,7 @@ export class SimulationController extends BaseController {
    */
   public saveMySimulation = async (
     req: Request,
-    res: Response
+    res: Response,
   ): Promise<Response> => {
     try {
       const userId = req.auth?.userId;
@@ -309,7 +309,7 @@ export class SimulationController extends BaseController {
           z.object({
             predScoreA: z.number().int().min(0),
             predScoreB: z.number().int().min(0),
-          })
+          }),
         ),
         topScorer: z.string().nullable().optional(),
       });
@@ -319,7 +319,7 @@ export class SimulationController extends BaseController {
         return this.badRequest(
           res,
           'Invalid simulation data',
-          result.error.errors
+          result.error.errors,
         );
       }
 
@@ -330,7 +330,7 @@ export class SimulationController extends BaseController {
           userId,
           resultsCount: Object.keys(results).length,
         },
-        'Saving user simulation'
+        'Saving user simulation',
       );
 
       // שמירה או עדכון ב-DB
@@ -352,7 +352,7 @@ export class SimulationController extends BaseController {
           userId,
           simulationId: simulation.id,
         },
-        'User simulation saved successfully'
+        'User simulation saved successfully',
       );
 
       return this.success(res, { simulation });
@@ -363,7 +363,7 @@ export class SimulationController extends BaseController {
           userId: req.auth?.userId,
           body: req.body,
         },
-        'Error saving user simulation'
+        'Error saving user simulation',
       );
 
       return this.internalError(res, error);

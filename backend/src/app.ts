@@ -18,7 +18,7 @@ app.use(
       config.frontendUrl,
     ].filter(Boolean),
     credentials: true,
-  })
+  }),
 );
 
 app.use(express.json());

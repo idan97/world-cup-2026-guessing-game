@@ -9,7 +9,7 @@ const server = app.listen(config.port, '0.0.0.0', () => {
       port: config.port,
       nodeEnv: config.nodeEnv,
     },
-    'Server started successfully'
+    'Server started successfully',
   );
 });
 

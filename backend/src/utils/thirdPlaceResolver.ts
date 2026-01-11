@@ -41,11 +41,11 @@ const assignments = thirdPlaceData as ThirdPlaceAssignmentData;
  * // Returns: { 74: 'J', 77: 'G', 79: 'E', 80: 'K', 82: 'H', 83: 'E', 85: 'F', 86: 'I', 87: 'L' }
  */
 export function resolveThirdPlaceAssignments(
-  rankedThirdPlaceGroups: string[]
+  rankedThirdPlaceGroups: string[],
 ): Record<number, string> {
   if (rankedThirdPlaceGroups.length !== 8) {
     throw new Error(
-      `Expected 8 third place groups, got ${rankedThirdPlaceGroups.length}`
+      `Expected 8 third place groups, got ${rankedThirdPlaceGroups.length}`,
     );
   }
 
@@ -56,22 +56,40 @@ export function resolveThirdPlaceAssignments(
 
   if (!assignment) {
     throw new Error(
-      `No third place assignment found for combination: ${combination}`
+      `No third place assignment found for combination: ${combination}`,
     );
   }
 
   // Map the assignments to match numbers
   const result: Record<number, string> = {};
 
-  if (assignment.match_74) result[74] = assignment.match_74;
-  if (assignment.match_77) result[77] = assignment.match_77;
-  if (assignment.match_79) result[79] = assignment.match_79;
-  if (assignment.match_80) result[80] = assignment.match_80;
-  if (assignment.match_82) result[82] = assignment.match_82;
-  if (assignment.match_83) result[83] = assignment.match_83;
-  if (assignment.match_85) result[85] = assignment.match_85;
-  if (assignment.match_86) result[86] = assignment.match_86;
-  if (assignment.match_87) result[87] = assignment.match_87;
+  if (assignment.match_74) {
+    result[74] = assignment.match_74;
+  }
+  if (assignment.match_77) {
+    result[77] = assignment.match_77;
+  }
+  if (assignment.match_79) {
+    result[79] = assignment.match_79;
+  }
+  if (assignment.match_80) {
+    result[80] = assignment.match_80;
+  }
+  if (assignment.match_82) {
+    result[82] = assignment.match_82;
+  }
+  if (assignment.match_83) {
+    result[83] = assignment.match_83;
+  }
+  if (assignment.match_85) {
+    result[85] = assignment.match_85;
+  }
+  if (assignment.match_86) {
+    result[86] = assignment.match_86;
+  }
+  if (assignment.match_87) {
+    result[87] = assignment.match_87;
+  }
 
   return result;
 }
@@ -88,12 +106,16 @@ export function rankThirdPlaceTeams(
     points: number;
     goalDiff: number;
     goalsFor: number;
-  }>
+  }>,
 ): string[] {
   // Sort by: 1) Points, 2) Goal Diff, 3) Goals For
   const sorted = thirdPlaceTeams.slice().sort((a, b) => {
-    if (a.points !== b.points) return b.points - a.points;
-    if (a.goalDiff !== b.goalDiff) return b.goalDiff - a.goalDiff;
+    if (a.points !== b.points) {
+      return b.points - a.points;
+    }
+    if (a.goalDiff !== b.goalDiff) {
+      return b.goalDiff - a.goalDiff;
+    }
     return b.goalsFor - a.goalsFor;
   });
 
@@ -112,7 +134,7 @@ export function rankThirdPlaceTeams(
 export function parseTeamCode(
   teamCode: string,
   thirdPlaceAssignments: Record<number, string> | null,
-  matchNumber: number
+  matchNumber: number,
 ): { position: number; groupLetter: string } | null {
   // Simple codes like '1A', '2B'
   if (/^[1-4][A-L]$/.test(teamCode)) {
@@ -131,7 +153,7 @@ export function parseTeamCode(
     const groupLetter = thirdPlaceAssignments[matchNumber];
     if (!groupLetter) {
       throw new Error(
-        `No third place assignment for match ${matchNumber} with code ${teamCode}`
+        `No third place assignment for match ${matchNumber} with code ${teamCode}`,
       );
     }
 

@@ -4,7 +4,7 @@ import { UserModel } from '../models/User';
 export const requireAdmin = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const userId = req.auth.userId;

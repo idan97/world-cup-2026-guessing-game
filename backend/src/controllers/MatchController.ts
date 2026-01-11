@@ -28,7 +28,7 @@ export class MatchController extends BaseController {
   //   ?limit=10 - limit number of results
   public getAllMatches = async (
     req: Request,
-    res: Response
+    res: Response,
   ): Promise<Response> => {
     try {
       const stage = req.query['stage'] as Stage | undefined;
@@ -46,7 +46,7 @@ export class MatchController extends BaseController {
       if (groupLetter && !VALID_GROUPS.includes(groupLetter.toUpperCase())) {
         return this.badRequest(
           res,
-          `Invalid group letter: ${groupLetter}. Valid groups: ${VALID_GROUPS.join(', ')}`
+          `Invalid group letter: ${groupLetter}. Valid groups: ${VALID_GROUPS.join(', ')}`,
         );
       }
 
@@ -54,7 +54,7 @@ export class MatchController extends BaseController {
       if (groupLetter && stage && stage !== 'GROUP') {
         return this.badRequest(
           res,
-          'Group filter can only be used with GROUP stage'
+          'Group filter can only be used with GROUP stage',
         );
       }
 
@@ -70,10 +70,18 @@ export class MatchController extends BaseController {
         upcoming?: boolean;
         limit?: number;
       } = {};
-      if (stage) filters.stage = stage;
-      if (groupLetter) filters.groupLetter = groupLetter.toUpperCase();
-      if (upcoming) filters.upcoming = upcoming;
-      if (limit) filters.limit = limit;
+      if (stage) {
+        filters.stage = stage;
+      }
+      if (groupLetter) {
+        filters.groupLetter = groupLetter.toUpperCase();
+      }
+      if (upcoming) {
+        filters.upcoming = upcoming;
+      }
+      if (limit) {
+        filters.limit = limit;
+      }
 
       const matches = await MatchModel.findWithFilters(filters);
 
@@ -82,7 +90,7 @@ export class MatchController extends BaseController {
           matchCount: matches.length,
           filters: { stage, groupLetter, upcoming, limit },
         },
-        'Fetched matches with filters'
+        'Fetched matches with filters',
       );
 
       return this.success(res, matches);
@@ -98,7 +106,7 @@ export class MatchController extends BaseController {
   //   ?window=2d - time window (e.g., 2d = 2 days)
   public getNextMatches = async (
     req: Request,
-    res: Response
+    res: Response,
   ): Promise<Response> => {
     try {
       const windowParam = req.query['window'] as string | undefined;
@@ -126,12 +134,12 @@ export class MatchController extends BaseController {
 
       // Filter by window
       const filteredMatches = matches.filter(
-        (m) => m.scheduledAt >= now && m.scheduledAt <= endTime
+        (m) => m.scheduledAt >= now && m.scheduledAt <= endTime,
       );
 
       logger.info(
         { matchCount: filteredMatches.length, window: windowParam },
-        'Fetched next matches'
+        'Fetched next matches',
       );
 
       return this.success(res, filteredMatches);
@@ -144,7 +152,7 @@ export class MatchController extends BaseController {
   // GET /matches/:id - Get single match
   public getMatchById = async (
     req: Request,
-    res: Response
+    res: Response,
   ): Promise<Response> => {
     try {
       const id = req.params['id'];
@@ -163,7 +171,7 @@ export class MatchController extends BaseController {
     } catch (error) {
       logger.error(
         { error, matchId: req.params['id'] },
-        'Error fetching match'
+        'Error fetching match',
       );
       return this.internalError(res, error);
     }
@@ -172,7 +180,7 @@ export class MatchController extends BaseController {
   // GET /matches/stage/:stage - Get matches by stage
   public getMatchesByStage = async (
     req: Request,
-    res: Response
+    res: Response,
   ): Promise<Response> => {
     try {
       const stage = req.params['stage'] as Stage;
@@ -185,14 +193,14 @@ export class MatchController extends BaseController {
 
       logger.info(
         { matchCount: matches.length, stage },
-        'Fetched matches by stage'
+        'Fetched matches by stage',
       );
 
       return this.success(res, matches);
     } catch (error) {
       logger.error(
         { error, stage: req.params['stage'] },
-        'Error fetching matches by stage'
+        'Error fetching matches by stage',
       );
       return this.internalError(res, error);
     }

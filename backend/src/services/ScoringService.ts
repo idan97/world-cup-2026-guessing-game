@@ -48,8 +48,12 @@ const TOP_SCORER_POINTS = 8;
  * קובע מהי ההכרעה (תוצאה) של משחק לפי הניקוד
  */
 function determineOutcome(team1Score: number, team2Score: number): Outcome {
-  if (team1Score > team2Score) return 'W';
-  if (team1Score < team2Score) return 'L';
+  if (team1Score > team2Score) {
+    return 'W';
+  }
+  if (team1Score < team2Score) {
+    return 'L';
+  }
   return 'D';
 }
 
@@ -101,7 +105,7 @@ export function calculateMatchScore(match: Match, pick: MatchPick): number {
  */
 export async function calculateAdvanceScore(
   formId: string,
-  stage: Exclude<Stage, 'GROUP'>
+  stage: Exclude<Stage, 'GROUP'>,
 ): Promise<number> {
   // מביאים את הניחושים של המשתמש לשלב זה
   const userAdvancePicks = await prisma.advancePick.findMany({
@@ -117,8 +121,12 @@ export async function calculateAdvanceScore(
   // אוסף את כל הקבוצות שמשחקות בשלב זה
   const actualTeamsInStage = new Set<string>();
   stageMatches.forEach((match) => {
-    if (match.team1Id) actualTeamsInStage.add(match.team1Id);
-    if (match.team2Id) actualTeamsInStage.add(match.team2Id);
+    if (match.team1Id) {
+      actualTeamsInStage.add(match.team1Id);
+    }
+    if (match.team2Id) {
+      actualTeamsInStage.add(match.team2Id);
+    }
   });
 
   // ספירה של כמה קבוצות המשתמש ניחש נכון
@@ -131,7 +139,9 @@ export async function calculateAdvanceScore(
 
   // השלב הקודם קובע כמה נקודות מקבלים על עלייה
   const previousStage = getPreviousStage(stage);
-  if (!previousStage) return 0;
+  if (!previousStage) {
+    return 0;
+  }
 
   const scoring = SCORING_MATRIX[previousStage];
   return correctAdvances * scoring.advance;
@@ -145,15 +155,19 @@ export async function calculateAdvanceScore(
  */
 export async function calculateTopScorerScore(
   formId: string,
-  actualTopScorer: string | null
+  actualTopScorer: string | null,
 ): Promise<number> {
-  if (!actualTopScorer) return 0;
+  if (!actualTopScorer) {
+    return 0;
+  }
 
   const pick = await prisma.topScorerPick.findUnique({
     where: { formId },
   });
 
-  if (!pick) return 0;
+  if (!pick) {
+    return 0;
+  }
 
   // השוואה case-insensitive
   const predictedName = pick.playerName.trim().toLowerCase();
@@ -170,7 +184,7 @@ export async function calculateTopScorerScore(
  */
 export async function calculateTotalScore(
   formId: string,
-  actualTopScorer: string | null = null
+  actualTopScorer: string | null = null,
 ): Promise<{
   totalPoints: number;
   breakdown: {
@@ -222,7 +236,7 @@ export async function calculateTotalScore(
   // 3. חישוב ניקוד ממלך השערים
   const topScorerPoints = await calculateTopScorerScore(
     formId,
-    actualTopScorer
+    actualTopScorer,
   );
   totalPoints += topScorerPoints;
 
@@ -246,7 +260,9 @@ export async function calculateTotalScore(
 function getPreviousStage(stage: Stage): Stage | null {
   const stageOrder: Stage[] = ['GROUP', 'R32', 'R16', 'QF', 'SF', 'F'];
   const index = stageOrder.indexOf(stage);
-  if (index <= 0) return null;
+  if (index <= 0) {
+    return null;
+  }
   const prevStage = stageOrder[index - 1];
   return prevStage ?? null;
 }
@@ -259,7 +275,7 @@ function getPreviousStage(stage: Stage): Stage | null {
  */
 export async function calculateTiebreakers(
   formId: string,
-  actualTopScorer: string | null = null
+  actualTopScorer: string | null = null,
 ): Promise<{
   exactResults: number; // פגיעות מדויקות בתוצאה
   correctDecisions: number; // פגיעות בהכרעה
@@ -344,13 +360,19 @@ export async function calculateTiebreakers(
 
     const actualTeams = new Set<string>();
     stageMatches.forEach((m) => {
-      if (m.team1Id) actualTeams.add(m.team1Id);
-      if (m.team2Id) actualTeams.add(m.team2Id);
+      if (m.team1Id) {
+        actualTeams.add(m.team1Id);
+      }
+      if (m.team2Id) {
+        actualTeams.add(m.team2Id);
+      }
     });
 
     let count = 0;
     userPicks.forEach((pick) => {
-      if (actualTeams.has(pick.teamId)) count++;
+      if (actualTeams.has(pick.teamId)) {
+        count++;
+      }
     });
 
     correctAdvances[stage] = count;
@@ -372,7 +394,7 @@ export async function calculateTiebreakers(
  */
 export async function updateFormScore(
   formId: string,
-  actualTopScorer: string | null = null
+  actualTopScorer: string | null = null,
 ): Promise<void> {
   const result = await calculateTotalScore(formId, actualTopScorer);
 
@@ -398,7 +420,7 @@ export async function updateFormScore(
  */
 export async function updateAllScores(
   actualTopScorer: string | null = null,
-  leagueId?: string
+  leagueId?: string,
 ): Promise<void> {
   let forms;
 
