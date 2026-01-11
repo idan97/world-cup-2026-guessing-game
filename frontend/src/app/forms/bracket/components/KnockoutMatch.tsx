@@ -90,7 +90,10 @@ export default function KnockoutMatch({
   const team2Name =
     team2?.nameHebrew || team2?.name || match?.team2Name || team2Placeholder;
 
-  const isTied = scoreA === scoreB;
+  // Helper to convert score to number for comparisons
+  const scoreANum = typeof scoreA === 'number' ? scoreA : 0;
+  const scoreBNum = typeof scoreB === 'number' ? scoreB : 0;
+  const isTied = scoreANum === scoreBNum && scoreANum > 0;
   const hasTeams = team1 && team2;
 
   const colorClasses: Record<string, string> = {
@@ -119,7 +122,7 @@ export default function KnockoutMatch({
           <div className="flex items-center justify-between gap-1">
             <span
               className={`text-[10px] truncate flex-1 ${
-                !isTied && scoreA > scoreB
+                !isTied && scoreANum > scoreBNum
                   ? 'font-bold text-emerald-700'
                   : 'text-slate-700'
               }`}
@@ -142,7 +145,7 @@ export default function KnockoutMatch({
           <div className="flex items-center justify-between gap-1">
             <span
               className={`text-[10px] truncate flex-1 ${
-                !isTied && scoreB > scoreA
+                !isTied && scoreBNum > scoreANum
                   ? 'font-bold text-emerald-700'
                   : 'text-slate-700'
               }`}
@@ -162,7 +165,7 @@ export default function KnockoutMatch({
             />
           </div>
           {/* Penalty winner selection */}
-          {isTied && hasTeams && (scoreA > 0 || scoreB > 0) && (
+          {isTied && hasTeams && scoreANum > 0 && scoreBNum > 0 && (
             <div className="pt-1 border-t border-slate-100">
               <div className="text-[9px] text-slate-500 mb-0.5">
                 מנצח פנדלים:
@@ -213,7 +216,7 @@ export default function KnockoutMatch({
         <div className="flex items-center justify-between gap-2">
           <span
             className={`text-sm truncate flex-1 ${
-              !isTied && scoreA > scoreB
+              !isTied && scoreANum > scoreBNum
                 ? 'font-bold text-emerald-700'
                 : 'text-slate-700'
             }`}
@@ -236,7 +239,7 @@ export default function KnockoutMatch({
         <div className="flex items-center justify-between gap-2">
           <span
             className={`text-sm truncate flex-1 ${
-              !isTied && scoreB > scoreA
+              !isTied && scoreBNum > scoreANum
                 ? 'font-bold text-emerald-700'
                 : 'text-slate-700'
             }`}
@@ -256,7 +259,7 @@ export default function KnockoutMatch({
           />
         </div>
         {/* Penalty winner selection */}
-        {isTied && hasTeams && (scoreA > 0 || scoreB > 0) && (
+        {isTied && hasTeams && (scoreANum > 0 || scoreBNum > 0) && (
           <div className="pt-2 border-t border-slate-100">
             <div className="text-xs text-slate-500 mb-1">בחר מנצח בפנדלים:</div>
             <div className="flex gap-2">

@@ -20,7 +20,9 @@ export default function FormExample() {
 
   // Save form draft using direct API call
   const handleSave = async () => {
-    if (!formData?.id) {return;}
+    if (!formData?.id) {
+      return;
+    }
 
     setIsSaving(true);
     setMessage('');
@@ -40,7 +42,9 @@ export default function FormExample() {
       setMessage('Form saved successfully!');
     } catch (error) {
       setMessage(
-        `Error saving form: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `Error saving form: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`,
       );
     } finally {
       setIsSaving(false);
@@ -49,7 +53,9 @@ export default function FormExample() {
 
   // Submit final form using direct API call
   const handleSubmit = async () => {
-    if (!formData?.id) {return;}
+    if (!formData?.id) {
+      return;
+    }
 
     if (
       !confirm(
@@ -71,7 +77,9 @@ export default function FormExample() {
       setMessage('Form submitted successfully!');
     } catch (error) {
       setMessage(
-        `Error submitting form: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `Error submitting form: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`,
       );
     } finally {
       setIsSubmitting(false);

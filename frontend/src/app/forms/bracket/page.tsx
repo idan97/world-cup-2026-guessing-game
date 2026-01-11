@@ -1055,12 +1055,10 @@ export default function BracketFormPage() {
             if (!match) {
               return null;
             }
+            const scoreA = typeof p.predScoreA === 'number' ? p.predScoreA : 0;
+            const scoreB = typeof p.predScoreB === 'number' ? p.predScoreB : 0;
             const predOutcome: 'W' | 'D' | 'L' =
-              p.predScoreA > p.predScoreB
-                ? 'W'
-                : p.predScoreA < p.predScoreB
-                ? 'L'
-                : 'D';
+              scoreA > scoreB ? 'W' : scoreA < scoreB ? 'L' : 'D';
             return {
               matchId: match.matchNumber,
               predScoreA: p.predScoreA,

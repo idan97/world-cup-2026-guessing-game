@@ -19,12 +19,12 @@ export function useApi() {
       nickname: string,
       picks?: Parameters<
         ReturnType<typeof createAuthenticatedApi>['createForm']
-      >[1]
+      >[1],
     ) => {
       const api = await getAuthenticatedApi();
       return api.createForm(nickname, picks);
     },
-    [getAuthenticatedApi]
+    [getAuthenticatedApi],
   );
 
   const savePicks = useCallback(
@@ -32,12 +32,12 @@ export function useApi() {
       formId: string,
       picks: Parameters<
         ReturnType<typeof createAuthenticatedApi>['savePicks']
-      >[1]
+      >[1],
     ) => {
       const api = await getAuthenticatedApi();
       return api.savePicks(formId, picks);
     },
-    [getAuthenticatedApi]
+    [getAuthenticatedApi],
   );
 
   const submitForm = useCallback(
@@ -45,7 +45,7 @@ export function useApi() {
       const api = await getAuthenticatedApi();
       return api.submitForm(formId);
     },
-    [getAuthenticatedApi]
+    [getAuthenticatedApi],
   );
 
   const joinLeague = useCallback(
@@ -53,7 +53,7 @@ export function useApi() {
       const token = await getToken();
       return http.post(`/leagues/${joinCode}/join`, undefined, token || '');
     },
-    [getToken]
+    [getToken],
   );
 
   // Predictions API (now using Forms API)
@@ -65,7 +65,7 @@ export function useApi() {
         matchId: number;
         predScoreA: number;
         predScoreB: number;
-      }>
+      }>,
     ) => {
       const api = await getAuthenticatedApi();
       return api.savePicks(formId, {
@@ -85,7 +85,7 @@ export function useApi() {
         }),
       });
     },
-    [getAuthenticatedApi]
+    [getAuthenticatedApi],
   );
 
   const saveAdvancePredictions = useCallback(
@@ -94,14 +94,14 @@ export function useApi() {
       predictions: Array<{
         stage: 'R32' | 'R16' | 'QF' | 'SF' | 'F';
         teamId: string;
-      }>
+      }>,
     ) => {
       const api = await getAuthenticatedApi();
       return api.savePicks(formId, {
         advancePicks: predictions,
       });
     },
-    [getAuthenticatedApi]
+    [getAuthenticatedApi],
   );
 
   const saveTopScorer = useCallback(
@@ -111,7 +111,7 @@ export function useApi() {
         topScorerPicks: [{ playerName }],
       });
     },
-    [getAuthenticatedApi]
+    [getAuthenticatedApi],
   );
 
   const calculateBracket = useCallback(
@@ -120,12 +120,12 @@ export function useApi() {
         matchId: string;
         team1Score: number;
         team2Score: number;
-      }>
+      }>,
     ) => {
       const api = await getAuthenticatedApi();
       return api.calculateBracket(matchResults);
     },
-    [getAuthenticatedApi]
+    [getAuthenticatedApi],
   );
 
   return {

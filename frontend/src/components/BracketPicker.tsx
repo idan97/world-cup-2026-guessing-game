@@ -197,7 +197,9 @@ export default function WorldCupKnockoutBracket({
   className = '',
 }: WorldCupBracketProps) {
   const [bracketData, setBracketData] = useState<BracketData>(() => {
-    if (initialBracketData) {return initialBracketData;}
+    if (initialBracketData) {
+      return initialBracketData;
+    }
     const defaultTeams = generateDefaultTeams();
     return createInitialBracketData(defaultTeams);
   });
@@ -267,7 +269,9 @@ export default function WorldCupKnockoutBracket({
     };
 
     const nextRound = nextRoundMap[match.round];
-    if (nextRound === match.round) {return;}
+    if (nextRound === match.round) {
+      return;
+    }
 
     let nextMatchId: string;
     let teamSlot: 'team1' | 'team2';
@@ -406,7 +410,9 @@ export default function WorldCupKnockoutBracket({
               <div className="pt-1 text-center">
                 <Badge
                   variant="default"
-                  className={`text-white ${isSpecialMatch ? 'bg-amber-600' : 'bg-slate-600'} text-xs px-2 py-1`}
+                  className={`text-white ${
+                    isSpecialMatch ? 'bg-amber-600' : 'bg-slate-600'
+                  } text-xs px-2 py-1`}
                 >
                   {match.winner.name}
                 </Badge>
