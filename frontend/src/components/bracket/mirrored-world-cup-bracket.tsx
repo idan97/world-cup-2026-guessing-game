@@ -135,7 +135,7 @@ export default function MirroredWorldCupBracket({
 
   const updateMatch = useCallback(
     (matchId: string, updates: Partial<Match>) => {
-      setBracketState((prev) => {
+      setBracketState((prev: BracketState) => {
         const newState = {
           ...prev,
           matches: {
@@ -194,7 +194,9 @@ export default function MirroredWorldCupBracket({
     };
 
     const nextRound = nextRoundMap[match.round];
-    if (nextRound === 'final' && match.round === 'thirdPlace') {return;}
+    if (nextRound === 'final' && match.round === 'thirdPlace') {
+      return;
+    }
 
     let nextMatchId: string;
     let teamSlot: 'team1' | 'team2';
@@ -362,8 +364,10 @@ export default function MirroredWorldCupBracket({
       <div className="flex flex-col gap-8">
         {rounds.map((round) => {
           const roundMatches = Object.values(bracketState.matches)
-            .filter((match) => match.round === round && match.side === side)
-            .sort((a, b) => a.position - b.position);
+            .filter(
+              (match: Match) => match.round === round && match.side === side,
+            )
+            .sort((a: Match, b: Match) => a.position - b.position);
 
           return (
             <div

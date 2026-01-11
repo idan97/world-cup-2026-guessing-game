@@ -1,15 +1,16 @@
 'use client';
 
-import { redirect } from 'next/navigation';
 import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 // Redirect to the full visual bracket editor
 export default function FormEditPage() {
+  const router = useRouter();
+
   useEffect(() => {
     // Client-side redirect
-    window.location.href = '/forms/bracket';
-  }, []);
+    router.replace('/forms/bracket');
+  }, [router]);
 
-  // Server-side redirect as fallback
-  redirect('/forms/bracket');
+  return null;
 }
